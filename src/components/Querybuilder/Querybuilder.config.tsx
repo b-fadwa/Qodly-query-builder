@@ -52,14 +52,10 @@ export default {
       },
     ],
     datasources: {
-      accept: ['string'],
+      accept: ['entitysel'],
     },
   },
-  defaultProps: {
-    name: 'Qodly',
-  },
+  defaultProps: {},
 } as T4DComponentConfig<IQuerybuilderProps>;
 
-export interface IQuerybuilderProps extends webforms.ComponentProps {
-  name?: string;
-}
+export interface IQuerybuilderProps extends webforms.ComponentProps {}
