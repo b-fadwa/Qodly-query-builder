@@ -16,16 +16,20 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
   const inputValue = useRef<HTMLInputElement>(null);
   const [isAnd, setAnd] = useState<boolean>(false);
   const [isOr, setOr] = useState<boolean>(false);
-  const [selectedLabels, setSelectedLabels] = useState<string[]>(['']);
-  const [selectedOperators, setSelectedOperators] = useState<string[]>(['']);
-  const [inputValues, setInputValues] = useState<string[]>(['']);
+  const [selectedLabels, setSelectedLabels] = useState<string[][]>([[]]);
+  const [selectedOperators, setSelectedOperators] = useState<string[][]>([[]]);
+  const [inputValues, setInputValues] = useState<string[][]>([[]]);
   const {
     sources: { datasource: ds },
   } = useSources();
 
   useEffect(() => {
     setGroups([{ rules: [{}] }]);
+    setSelectedLabels([[]]);
+    setSelectedOperators([[]]);
+    setInputValues([[]]);
   }, []);
+
   const loader = useMemo<DataLoader | null>(() => {
     if (!ds) {
       return null;
@@ -56,30 +60,34 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
       };
       return updatedGroups;
     });
-    setSelectedLabels((prevLabels) => [...prevLabels, '']);
-    setSelectedOperators((prevOperators) => [...prevOperators, '']);
-    setInputValues((prevValues) => [...prevValues, '']);
+    setSelectedLabels(prevLabels => [...prevLabels, []]);
+    setSelectedOperators(prevOperators => [...prevOperators, []]);
+    setInputValues(prevInputs => [...prevInputs, []]);
   };
 
   const generateGroup = () => {
     setGroups([...groups, { rules: [{}] }]); //generate a new group with a first rule
+    setSelectedLabels(prevLabels => [...prevLabels, []]); 
+    setSelectedOperators(prevOperators => [...prevOperators, []]); 
+    setInputValues(prevInputs => [...prevInputs, []]); 
+
   };
 
-  const updateLabel = (v: string, ruleIndex: number) => {
+  const updateLabel = (v: string, ruleIndex: number, groupIndex: number) => {
     const updatedLabels = [...selectedLabels];
-    updatedLabels[ruleIndex] = v;
+    updatedLabels[groupIndex][ruleIndex] = v;
     setSelectedLabels(updatedLabels);
   };
 
-  const updateOperator = (v: string, ruleIndex: number) => {
+  const updateOperator = (v: string, ruleIndex: number, groupIndex: number) => {
     const updatedOperators = [...selectedOperators];
-    updatedOperators[ruleIndex] = v;
+    updatedOperators[groupIndex][ruleIndex] = v;
     setSelectedOperators(updatedOperators);
   };
 
-  const updateInput = (v: string, ruleIndex: number) => {
+  const updateInput = (v: string, ruleIndex: number, groupIndex: number) => {
     const updatedValues = [...inputValues];
-    updatedValues[ruleIndex] = v;
+    updatedValues[groupIndex][ruleIndex] = v;
     setInputValues(updatedValues);
   };
 
@@ -89,15 +97,15 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
     }
   }, [inputValue.current]);
 
-  const NewRule = ({ ruleIndex }: { ruleIndex: number }) => {
+  const NewRule = ({ ruleIndex, groupIndex }: { ruleIndex: number; groupIndex: number }) => {
     return (
       <div className={cn('builder-new-rule', 'w-full h-fit flex flex-row p-2 gap-6')}>
         <select
           className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
           ref={labelSelect}
-          value={selectedLabels[ruleIndex]}
+          value={selectedLabels[groupIndex][ruleIndex]}
           onChange={(v) => {
-            updateLabel(v.target.value, ruleIndex);
+            updateLabel(v.target.value, ruleIndex,groupIndex);
           }}
         >
           {dsFields.map((attribute) => (
@@ -107,9 +115,9 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
         <select
           className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
           ref={operator}
-          value={selectedOperators[ruleIndex]}
+          value={selectedOperators[groupIndex][ruleIndex]}
           onChange={(v) => {
-            updateOperator(v.target.value, ruleIndex);
+            updateOperator(v.target.value, ruleIndex,groupIndex);
           }}
         >
           <option value="===">===</option>
@@ -127,9 +135,9 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
           placeholder="Value"
           ref={inputValue}
           className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
-          value={inputValues[ruleIndex]}
+          value={inputValues[groupIndex][ruleIndex]}
           onChange={(v) => {
-            updateInput(v.target.value, ruleIndex);
+            updateInput(v.target.value, ruleIndex,groupIndex);
           }}
         ></input>
       </div>
@@ -180,7 +188,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
         <div className={cn('builder-body', 'flex flex-col grow p-2')}>
           {groups[groupIndex].rules.map(({}, ruleIndex) => (
             <div key={ruleIndex} className={cn('builder-rule', 'flex items-center')}>
-              <NewRule ruleIndex={ruleIndex} />
+              <NewRule ruleIndex={ruleIndex} groupIndex={groupIndex}/>
               <span>{ruleIndex}</span>
               <button
                 className={cn(
@@ -207,9 +215,9 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
         let updatedGroups = [...prevGroups];
         updatedGroups[groupIndex].rules.splice(ruleIndex, 1); //logically correct but visually no (it gets executed twice)
         //remove inputs
-        updateInput('', ruleIndex);
-        updateLabel('', ruleIndex);
-        updateOperator('', ruleIndex);
+        updateInput('', ruleIndex,groupIndex);
+        updateLabel('', ruleIndex,groupIndex);
+        updateOperator('', ruleIndex,groupIndex);
         return updatedGroups;
       });
     } else {
@@ -221,9 +229,9 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
   const clearBuilder = () => {
     setGroups([{ rules: [{}] }]);
     //+clear datasources binded to inputs...
-    setSelectedLabels(['']);
-    setSelectedOperators(['']);
-    setInputValues(['']);
+    setSelectedLabels([[]]);
+    setSelectedOperators([[]]);
+    setInputValues([[]]);
   };
 
   const setAndOperator = () => {
@@ -254,7 +262,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
       //   output.push(item);
       // }
       // debugger;
-      const label:string = labelSelect.current != null ? labelSelect.current.value : '';
+      const label: string = labelSelect.current != null ? labelSelect.current.value : '';
       let query: boolean = false;
       switch (operator.current?.value) {
         case '===':
@@ -323,7 +331,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
         </div>
         <div
           className={cn('builder-footer', 'flex flex-row justify-end gap-2 p-2')}
-          onClick={applyQuery}//call multipleQueries here 
+          onClick={applyQuery} //call multipleQueries here
         >
           <button
             className={cn('builder-clear', 'rounded-md p-2 border-2 border-blue-300 bg-white')}
