@@ -10,13 +10,15 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
   const { connect } = useRenderer();
   const [value, setValue] = useState<datasources.IEntity[]>([]);
   const [groups, setGroups] = useState([{ rules: [{}] }]);
-  const [dsFields, setFields] = useState<string[]>([]); 
+  const [dsFields, setFields] = useState<string[]>([]);
   const labelSelect = useRef<HTMLSelectElement>(null);
   const operator = useRef<HTMLSelectElement>(null);
   const inputValue = useRef<HTMLInputElement>(null);
   const [isAnd, setAnd] = useState<boolean>(false);
   const [isOr, setOr] = useState<boolean>(false);
-
+  const [selectedLabels, setSelectedLabels] = useState<string[]>(['']);
+  const [selectedOperators, setSelectedOperators] = useState<string[]>(['']);
+  const [inputValues, setInputValues] = useState<string[]>(['']);
   const {
     sources: { datasource: ds },
   } = useSources();
@@ -54,24 +56,62 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
       };
       return updatedGroups;
     });
+    setSelectedLabels((prevLabels) => [...prevLabels, '']);
+    setSelectedOperators((prevOperators) => [...prevOperators, '']);
+    setInputValues((prevValues) => [...prevValues, '']);
   };
 
   const generateGroup = () => {
     setGroups([...groups, { rules: [{}] }]); //generate a new group with a first rule
   };
 
-  const NewRule = () => {
+  const updateLabel = (v: string, ruleIndex: number) => {
+    const updatedLabels = [...selectedLabels];
+    updatedLabels[ruleIndex] = v;
+    setSelectedLabels(updatedLabels);
+  };
+
+  const updateOperator = (v: string, ruleIndex: number) => {
+    const updatedOperators = [...selectedOperators];
+    updatedOperators[ruleIndex] = v;
+    setSelectedOperators(updatedOperators);
+  };
+
+  const updateInput = (v: string, ruleIndex: number) => {
+    const updatedValues = [...inputValues];
+    updatedValues[ruleIndex] = v;
+    setInputValues(updatedValues);
+  };
+
+  useEffect(() => {
+    if (inputValue.current) {
+      inputValue.current.focus();
+    }
+  }, [inputValue.current]);
+
+  const NewRule = ({ ruleIndex }: { ruleIndex: number }) => {
     return (
       <div className={cn('builder-new-rule', 'w-full h-fit flex flex-row p-2 gap-6')}>
         <select
           className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
           ref={labelSelect}
+          value={selectedLabels[ruleIndex]}
+          onChange={(v) => {
+            updateLabel(v.target.value, ruleIndex);
+          }}
         >
           {dsFields.map((attribute) => (
             <option value={attribute}>{attribute}</option>
           ))}
         </select>
-        <select className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')} ref={operator}>
+        <select
+          className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
+          ref={operator}
+          value={selectedOperators[ruleIndex]}
+          onChange={(v) => {
+            updateOperator(v.target.value, ruleIndex);
+          }}
+        >
           <option value="===">===</option>
           <option value="!=">!=</option>
           <option value="&lt;">&lt;</option>
@@ -85,8 +125,12 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
         <input
           type="text"
           placeholder="Value"
-          ref={inputValue} //should make the ref related to the rule
+          ref={inputValue}
           className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
+          value={inputValues[ruleIndex]}
+          onChange={(v) => {
+            updateInput(v.target.value, ruleIndex);
+          }}
         ></input>
       </div>
     );
@@ -136,7 +180,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
         <div className={cn('builder-body', 'flex flex-col grow p-2')}>
           {groups[groupIndex].rules.map(({}, ruleIndex) => (
             <div key={ruleIndex} className={cn('builder-rule', 'flex items-center')}>
-              <NewRule />
+              <NewRule ruleIndex={ruleIndex} />
               <span>{ruleIndex}</span>
               <button
                 className={cn(
@@ -162,7 +206,10 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
       setGroups((prevGroups) => {
         let updatedGroups = [...prevGroups];
         updatedGroups[groupIndex].rules.splice(ruleIndex, 1); //logically correct but visually no (it gets executed twice)
-        debugger;
+        //remove inputs
+        updateInput('', ruleIndex);
+        updateLabel('', ruleIndex);
+        updateOperator('', ruleIndex);
         return updatedGroups;
       });
     } else {
@@ -174,6 +221,9 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
   const clearBuilder = () => {
     setGroups([{ rules: [{}] }]);
     //+clear datasources binded to inputs...
+    setSelectedLabels(['']);
+    setSelectedOperators(['']);
+    setInputValues(['']);
   };
 
   const setAndOperator = () => {
@@ -293,5 +343,5 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
 export default Querybuilder;
 
 //multiple queries
-//persist each input with its value when rerendering  the inputs..
+//persist each input with its value when rerendering  the inputs.. + make inputs depemd on groups too
 //active button css
