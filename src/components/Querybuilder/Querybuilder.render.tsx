@@ -109,7 +109,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
           ref={labelSelect}
           value={selectedLabels[groupIndex][ruleIndex]}
           onChange={(v) => {
-            updateLabel(v.target.value, ruleIndex,groupIndex);
+            updateLabel(v.target.value, ruleIndex, groupIndex);
           }}
         >
           <option value="">Property</option>
@@ -122,7 +122,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
           ref={operator}
           value={selectedOperators[groupIndex][ruleIndex]}
           onChange={(v) => {
-            updateOperator(v.target.value, ruleIndex,groupIndex);
+            updateOperator(v.target.value, ruleIndex, groupIndex);
           }}
         >
           <option value="">Operator</option>
@@ -214,7 +214,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
         <div className={cn('builder-body', 'flex flex-col grow p-2')}>
           {groups[groupIndex].rules.map(({}, ruleIndex) => (
             <div key={ruleIndex} className={cn('builder-rule', 'flex items-center')}>
-              <NewRule ruleIndex={ruleIndex} groupIndex={groupIndex}/>
+              <NewRule ruleIndex={ruleIndex} groupIndex={groupIndex} />
               <span>{ruleIndex}</span>
               <button
                 className={cn(
@@ -241,9 +241,9 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
         let updatedGroups = [...prevGroups];
         updatedGroups[groupIndex].rules.splice(ruleIndex, 1); //logically correct but visually no (it gets executed twice)
         //remove inputs
-        updateInput('', ruleIndex,groupIndex);
-        updateLabel('', ruleIndex,groupIndex);
-        updateOperator('', ruleIndex,groupIndex);
+        updateInput('', ruleIndex, groupIndex);
+        updateLabel('', ruleIndex, groupIndex);
+        updateOperator('', ruleIndex, groupIndex);
         return updatedGroups;
       });
     } else {
@@ -339,7 +339,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
 
   const multipleQueries = () => {
     //get the queries stored in each rule
-    let output: any[] = [];
+    // debugger;
     const queries = groups.map((group, groupIndex) =>
       group.rules.map((_, ruleIndex) => ({
         label: selectedLabels[groupIndex][ruleIndex] || '',
@@ -347,47 +347,35 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
         value: inputValues[groupIndex][ruleIndex] || '',
       })),
     );
-    // console.log(queries);
-    // debugger;
-    if (isAnd) {
-      // queries.forEach((query) => {
-      //   console.log(query);
-      //   query.map((one) => {
-      //     console.log(one?.label);
-      //     console.log(one?.operator);
-      //     console.log(one?.value);
-      //     output.push(applyQuery(one?.label, one?.operator, one?.value));
-      //   });
-      // });
-      // debugger
-      queries.forEach((groupQueries) => {
-        const groupOutput = groupQueries.reduce((prevValue, groupItem) => {
-          const queryResult = applyQuery(groupItem.label, groupItem.operator, groupItem.value);
-          return prevValue.filter((item) => queryResult.includes(item));
-        }, value);
-        output.push(groupOutput);
-      });
+    if (queries[0].length === 1) {
+      const queryResult = applyQuery(
+        queries[0][0].label,
+        queries[0][0].operator,
+        queries[0][0].value,
+      );
+      setValue(queryResult);
+    } else {
+      let output: any[] = [];
+      if (isAnd) {
+        queries.forEach((groupQueries) => {
+          const groupOutput = groupQueries.reduce((prevValue, groupItem) => {
+            const queryResult = applyQuery(groupItem.label, groupItem.operator, groupItem.value);
+            return prevValue.filter((item) => queryResult.includes(item));
+          }, value);
+          output.push(groupOutput);
+        });
+      }
+      if (isOr) {
+        queries.forEach((groupQueries) => {
+          const groupOutput = groupQueries.reduce((prevValue, groupItem) => {
+            const queryResult = applyQuery(groupItem.label, groupItem.operator, groupItem.value);
+            return prevValue.concat(queryResult.filter((item: any) => !prevValue.includes(item)));
+          }, []);
+          output.push(groupOutput);
+        });
+      }
+      setValue(output);
     }
-    if (isOr) {
-      queries.forEach((groupQueries) => {
-        const groupOutput = groupQueries.reduce((prevValue, groupItem) => {
-          const queryResult = applyQuery(groupItem.label, groupItem.operator, groupItem.value);
-          return prevValue.concat(queryResult.filter((item: any) => !prevValue.includes(item)));
-        }, []);
-        output.push(groupOutput);
-      });
-      // queries.forEach((query) => {
-      //   console.log(query);
-      //   query.map((one) => {
-      //     console.log(one?.label);
-      //     console.log(one?.operator);
-      //     console.log(one?.value);
-      //     output.push(applyQuery(one?.label, one?.operator, one?.value));
-      //   });
-      // });
-    }
-    // debugger;
-    setValue(output);
   };
 
   return (
@@ -423,3 +411,4 @@ export default Querybuilder;
 
 //multiple queries
 //make add and or depend on each button
+//set the output/value in the ds/loader..
