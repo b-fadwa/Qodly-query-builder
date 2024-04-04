@@ -1,6 +1,6 @@
 import { useRenderer, useSources } from '@ws-ui/webform-editor';
 import cn from 'classnames';
-import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { CSSProperties, FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { IQuerybuilderProps } from './Querybuilder.config';
 import { FaRegTrashAlt } from 'react-icons/fa';
@@ -39,7 +39,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
       return null;
     }
     return DataLoader.create(ds, Object.getOwnPropertyNames(ds.dataclass).splice(1));
-  }, [Object.getOwnPropertyNames(ds.dataclass).splice(1), ds]);
+  }, [Object.getOwnPropertyNames(ds?.dataclass).splice(1), ds]);
 
   const updateFromLoader = useCallback(() => {
     if (!loader) {
@@ -54,6 +54,13 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
     if (!loader || !ds) return;
     loader.sourceHasChanged().then(updateFromLoader);
   }, []);
+
+  const activeButton: CSSProperties = {
+    //not working
+    backgroundColor: '#ffffff !important',
+    borderColor: '#93C5FD !important',
+    borderWidth: '2px !important',
+  };
 
   const generateRule = (groupIndex: number) => {
     setGroups((prevGroups) => {
@@ -162,6 +169,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
         >
           <div className={cn('builder-andOr', 'flex flex-row w-40 gap-2 ')}>
             <button
+              id={'Add' + groupIndex}
               className={
                 isAndActive
                   ? cn('builder-and', 'grow rounded-md bg-white border-2 w-3/6 border-blue-300')
@@ -170,11 +178,14 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
                       'grow rounded-md bg-blue-300 w-3/6 p-2 hover:bg-white border-2 border-blue-300',
                     )
               }
-              onClick={setAndOperator}
+              onClick={(event) => {
+                setAndOperator(event);
+              }}
             >
               And
             </button>
             <button
+              id={'Or' + groupIndex}
               className={
                 isOrActive
                   ? cn('builder-or', 'grow rounded-md bg-white border-2 w-3/6 border-blue-300')
@@ -183,7 +194,9 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
                       'grow rounded-md bg-blue-300 p-2 w-3/6 hover:bg-white border-2 border-blue-300',
                     )
               }
-              onClick={setOrOperator}
+              onClick={(event: any) => {
+                setOrOperator(event);
+              }}
             >
               Or
             </button>
@@ -265,16 +278,29 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
     setOrActive(false);
   };
 
-  const setAndOperator = () => {
+  const setAndOperator = (event: any) => {
+    //   let activeStyle: string = `{
+    //     border-radius: 2px !important;
+    //     border-color: #93C5FG !important;
+    //     background-color: #FFFFFF !important;
+    // }`;
+    debugger;
+    console.log(event.currentTarget.id);
     setOr(isAnd);
     setAnd(!isAnd);
+    // var selectedButton = document.getElementById(event.currentTarget.id);
+    // selectedButton?.classList.add(activeButton.toString);
+    // if (selectedButton) selectedButton.classList.add(activeStyle);
     setAndActive(true);
     setOrActive(false);
   };
 
-  const setOrOperator = () => {
+  const setOrOperator = (event: any) => {
+    console.log(event.currentTarget.id);
     setAnd(isOr);
     setOr(!isOr);
+    // var selectedButton = document.getElementById(event.currentTarget.id);
+    // selectedButton?.classList.add(activeButton.toString());
     setOrActive(true);
     setAndActive(false);
   };
@@ -285,15 +311,6 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
     const queryOutput = [...value];
     let output: any = [];
     queryOutput.map((item: any) => {
-      //eval not working
-      // const formedQuery: string = JSON.stringify(item)+'[' + labelSelect.current?.value +'] ' + operator.current?.value +' "' + inputValue + '"';
-      // console.log(eval(formedQuery));
-      // if (eval(formedQuery)) {
-      //   // debugger
-      //   output.push(item);
-      // }
-      // debugger;
-      // const label: string = labelSelect.current != null ? labelSelect.current.value : '';
       let query: boolean = false;
       // debugger;
       switch (operator) {
@@ -330,10 +347,8 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
       }
       if (query) {
         output.push(item);
-        // ds.setValue(null, output);
       }
     });
-    // debugger;
     return output;
   };
 
@@ -353,6 +368,8 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
         queries[0][0].operator,
         queries[0][0].value,
       );
+      // debugger
+      // ds.setValue('', queryResult); //not working
       setValue(queryResult);
     } else {
       let output: any[] = [];
@@ -374,6 +391,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
           output.push(groupOutput);
         });
       }
+      // ds.setValue(null, output); //not working
       setValue(output);
     }
   };
@@ -409,6 +427,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
 
 export default Querybuilder;
 
-//multiple queries
+//multiple queries case: multiple groups
 //make add and or depend on each button
 //set the output/value in the ds/loader..
+//query to be done in backend using REST
