@@ -9,6 +9,7 @@ import { DataLoader } from '@ws-ui/webform-editor';
 const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [] }) => {
   const { connect } = useRenderer();
   const [value, setValue] = useState<datasources.IEntity[]>([]);
+  const [initDS, setDS] = useState<datasources.IEntity[]>([]);
   const [groups, setGroups] = useState([{ rules: [{}] }]);
   const [dsFields, setFields] = useState<string[]>([]);
   const labelSelect = useRef<HTMLSelectElement>(null);
@@ -19,6 +20,9 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
   const [selectedLabels, setSelectedLabels] = useState<string[][]>([[]]);
   const [selectedOperators, setSelectedOperators] = useState<string[][]>([[]]);
   const [inputValues, setInputValues] = useState<string[][]>([[]]);
+  const [isAndActive, setAndActive] = useState<boolean>(false);
+  const [isOrActive, setOrActive] = useState<boolean>(false);
+
   const {
     sources: { datasource: ds },
   } = useSources();
@@ -42,6 +46,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
       return;
     }
     setValue(loader.page);
+    setDS(loader.page);
     setFields(loader.attributes);
   }, [loader]);
 
@@ -60,17 +65,16 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
       };
       return updatedGroups;
     });
-    setSelectedLabels(prevLabels => [...prevLabels, []]);
-    setSelectedOperators(prevOperators => [...prevOperators, []]);
-    setInputValues(prevInputs => [...prevInputs, []]);
+    setSelectedLabels((prevLabels) => [...prevLabels, []]);
+    setSelectedOperators((prevOperators) => [...prevOperators, []]);
+    setInputValues((prevInputs) => [...prevInputs, []]);
   };
 
   const generateGroup = () => {
     setGroups([...groups, { rules: [{}] }]); //generate a new group with a first rule
-    setSelectedLabels(prevLabels => [...prevLabels, []]); 
-    setSelectedOperators(prevOperators => [...prevOperators, []]); 
-    setInputValues(prevInputs => [...prevInputs, []]); 
-
+    setSelectedLabels((prevLabels) => [...prevLabels, []]);
+    setSelectedOperators((prevOperators) => [...prevOperators, []]);
+    setInputValues((prevInputs) => [...prevInputs, []]);
   };
 
   const updateLabel = (v: string, ruleIndex: number, groupIndex: number) => {
@@ -108,6 +112,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
             updateLabel(v.target.value, ruleIndex,groupIndex);
           }}
         >
+          <option value="">Property</option>
           {dsFields.map((attribute) => (
             <option value={attribute}>{attribute}</option>
           ))}
@@ -120,6 +125,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
             updateOperator(v.target.value, ruleIndex,groupIndex);
           }}
         >
+          <option value="">Operator</option>
           <option value="===">===</option>
           <option value="!=">!=</option>
           <option value="&lt;">&lt;</option>
@@ -137,7 +143,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
           className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
           value={inputValues[groupIndex][ruleIndex]}
           onChange={(v) => {
-            updateInput(v.target.value, ruleIndex,groupIndex);
+            updateInput(v.target.value, ruleIndex, groupIndex);
           }}
         ></input>
       </div>
@@ -156,13 +162,27 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
         >
           <div className={cn('builder-andOr', 'flex flex-row w-40 gap-2 ')}>
             <button
-              className={cn('builder-and', 'grow rounded-md bg-blue-300 p-2')}
+              className={
+                isAndActive
+                  ? cn('builder-and', 'grow rounded-md bg-white border-2 w-3/6 border-blue-300')
+                  : cn(
+                      'builder-and',
+                      'grow rounded-md bg-blue-300 w-3/6 p-2 hover:bg-white border-2 border-blue-300',
+                    )
+              }
               onClick={setAndOperator}
             >
               And
             </button>
             <button
-              className={cn('builder-or', 'grow rounded-md bg-blue-300 p-2')}
+              className={
+                isOrActive
+                  ? cn('builder-or', 'grow rounded-md bg-white border-2 w-3/6 border-blue-300')
+                  : cn(
+                      'builder-and',
+                      'grow rounded-md bg-blue-300 p-2 w-3/6 hover:bg-white border-2 border-blue-300',
+                    )
+              }
               onClick={setOrOperator}
             >
               Or
@@ -170,7 +190,10 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
           </div>
           <div>
             <button
-              className={cn('builder-rule', 'grow rounded-md bg-blue-300 p-2')}
+              className={cn(
+                'builder-rule',
+                'grow rounded-md bg-blue-300 p-2 hover:bg-white border-2 border-blue-300',
+              )}
               onClick={() => generateRule(groupIndex)}
             >
               + Rule
@@ -178,7 +201,10 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
           </div>
           <div>
             <button
-              className={cn('builder-group', 'grow rounded-md bg-blue-300 p-2')}
+              className={cn(
+                'builder-group',
+                'grow rounded-md bg-blue-300 p-2 hover:bg-white border-2 border-blue-300',
+              )}
               onClick={generateGroup}
             >
               + Group
@@ -232,91 +258,136 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
     setSelectedLabels([[]]);
     setSelectedOperators([[]]);
     setInputValues([[]]);
+    setValue(initDS);
+    setAnd(false);
+    setOr(false);
+    setAndActive(false);
+    setOrActive(false);
   };
 
   const setAndOperator = () => {
     setOr(isAnd);
     setAnd(!isAnd);
-    // console.log('and ' + isAnd + ' or' + isOr);
-    // query1 && query2
+    setAndActive(true);
+    setOrActive(false);
   };
 
   const setOrOperator = () => {
     setAnd(isOr);
     setOr(!isOr);
-    // console.log('and ' + isAnd + ' or' + isOr);
-    // query1||query2
+    setOrActive(true);
+    setAndActive(false);
   };
 
-  const applyQuery = () => {
+  const applyQuery = (label: string, operator: string, inputValue: string) => {
     //should return the output array??
     //check if the value = '' set it to null or empty string
     const queryOutput = [...value];
     let output: any = [];
-    queryOutput.map((item) => {
+    queryOutput.map((item: any) => {
       //eval not working
-      // const formedQuery: string = JSON.stringify(item)+'[' + labelSelect.current?.value +'] ' + operator.current?.value +' "' + inputValue.current?.value + '"';
+      // const formedQuery: string = JSON.stringify(item)+'[' + labelSelect.current?.value +'] ' + operator.current?.value +' "' + inputValue + '"';
       // console.log(eval(formedQuery));
       // if (eval(formedQuery)) {
       //   // debugger
       //   output.push(item);
       // }
       // debugger;
-      const label: string = labelSelect.current != null ? labelSelect.current.value : '';
+      // const label: string = labelSelect.current != null ? labelSelect.current.value : '';
       let query: boolean = false;
-      switch (operator.current?.value) {
+      // debugger;
+      switch (operator) {
         case '===':
-          if (labelSelect.current)
-            // query=item[labelSelect.current?.value] === inputValue.current?.value
-            query = item[label] === inputValue.current?.value;
+          query = item[label] === inputValue;
           break;
         case '!=':
-          query = item[label] != inputValue.current?.value;
+          query = item[label] != inputValue;
           break;
         case 'contains':
-          query = item[label].includes(inputValue.current?.value);
+          query = item[label].includes(inputValue);
           break;
         case 'endsWith':
-          query = item[label].endsWith(inputValue.current?.value);
+          query = item[label].endsWith(inputValue);
           break;
         case 'startsWith':
-          query = item[label].startsWith(inputValue.current?.value);
+          query = item[label].startsWith(inputValue);
           break;
         //numbers
         case '<':
-          query = Number(item[label]) < Number(inputValue.current?.value);
+          query = Number(item[label]) < Number(inputValue);
           break;
         case '>':
-          query = Number(item[label]) > Number(inputValue.current?.value);
+          query = Number(item[label]) > Number(inputValue);
           break;
         case 'between':
-          query = item[label] != inputValue.current?.value;
+          query = item[label] != inputValue;
           break;
         case 'in':
-          if (inputValue.current) query = inputValue.current?.value in item; //use property index instead of inputva...?
+          if (inputValue) query = inputValue in item; //use property index instead of inputva...?
           break;
         default:
-          console.log('by default test' + operator.current?.value);
+          console.log('by default test' + operator);
       }
       if (query) {
         output.push(item);
         // ds.setValue(null, output);
       }
     });
-
-    setValue(output);
+    // debugger;
+    return output;
   };
 
   const multipleQueries = () => {
-    applyQuery;
+    //get the queries stored in each rule
+    let output: any[] = [];
+    const queries = groups.map((group, groupIndex) =>
+      group.rules.map((_, ruleIndex) => ({
+        label: selectedLabels[groupIndex][ruleIndex] || '',
+        operator: selectedOperators[groupIndex][ruleIndex] || '',
+        value: inputValues[groupIndex][ruleIndex] || '',
+      })),
+    );
+    // console.log(queries);
+    // debugger;
     if (isAnd) {
-      //add && between the two query
-      //or get output of first query + output of second query and combine with and
+      // queries.forEach((query) => {
+      //   console.log(query);
+      //   query.map((one) => {
+      //     console.log(one?.label);
+      //     console.log(one?.operator);
+      //     console.log(one?.value);
+      //     output.push(applyQuery(one?.label, one?.operator, one?.value));
+      //   });
+      // });
+      // debugger
+      queries.forEach((groupQueries) => {
+        const groupOutput = groupQueries.reduce((prevValue, groupItem) => {
+          const queryResult = applyQuery(groupItem.label, groupItem.operator, groupItem.value);
+          return prevValue.filter((item) => queryResult.includes(item));
+        }, value);
+        output.push(groupOutput);
+      });
     }
     if (isOr) {
-      //or && between the two query
-      //or get output of first query + output of second query and distinct with or
+      queries.forEach((groupQueries) => {
+        const groupOutput = groupQueries.reduce((prevValue, groupItem) => {
+          const queryResult = applyQuery(groupItem.label, groupItem.operator, groupItem.value);
+          return prevValue.concat(queryResult.filter((item: any) => !prevValue.includes(item)));
+        }, []);
+        output.push(groupOutput);
+      });
+      // queries.forEach((query) => {
+      //   console.log(query);
+      //   query.map((one) => {
+      //     console.log(one?.label);
+      //     console.log(one?.operator);
+      //     console.log(one?.value);
+      //     output.push(applyQuery(one?.label, one?.operator, one?.value));
+      //   });
+      // });
     }
+    // debugger;
+    setValue(output);
   };
 
   return (
@@ -331,7 +402,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
         </div>
         <div
           className={cn('builder-footer', 'flex flex-row justify-end gap-2 p-2')}
-          onClick={applyQuery} //call multipleQueries here
+          onClick={multipleQueries} //call multipleQueries here
         >
           <button
             className={cn('builder-clear', 'rounded-md p-2 border-2 border-blue-300 bg-white')}
@@ -351,5 +422,4 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
 export default Querybuilder;
 
 //multiple queries
-//persist each input with its value when rerendering  the inputs.. + make inputs depemd on groups too
-//active button css
+//make add and or depend on each button
