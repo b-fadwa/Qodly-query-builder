@@ -20,8 +20,8 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
   const [selectedLabels, setSelectedLabels] = useState<string[][]>([[]]);
   const [selectedOperators, setSelectedOperators] = useState<string[][]>([[]]);
   const [inputValues, setInputValues] = useState<string[][]>([[]]);
-  // const [isAndActive, setAndActive] = useState<boolean>(false);
-  // const [isOrActive, setOrActive] = useState<boolean>(false);
+  const [isAndActive, setAndActive] = useState<boolean[]>(new Array(groups.length).fill(false));
+  const [isOrActive, setOrActive] = useState<boolean[]>(new Array(groups.length).fill(false));
   const [query, setQuery] = useState<string>('');
 
   const {
@@ -165,36 +165,29 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
         >
           <div className={cn('builder-andOr', 'flex flex-row w-40 gap-2 ')}>
             <button
-              id={'Add' + groupIndex}
-              // ref={andButtonsRefs[groupIndex]}
               className={
-                // isAndActive
-                //   ? cn('builder-and', 'grow rounded-md bg-white border-2 w-3/6 border-blue-300')
-                //   :
-                cn(
-                  'builder-and',
-                  'grow rounded-md bg-blue-300 w-3/6 p-2 hover:bg-white border-2 border-blue-300',
-                )
+                isAndActive[groupIndex]
+                  ? cn('builder-and', 'grow rounded-md bg-white border-2 w-3/6 border-blue-300')
+                  : cn(
+                      'builder-and',
+                      'grow rounded-md bg-blue-300 w-3/6 p-2 hover:bg-white border-2 border-blue-300',
+                    )
               }
-              onClick={(event) => {
-                setAndOperator(event);
-              }}
+              onClick={() => setAndOperator(groupIndex)}
             >
               And
             </button>
             <button
-              id={'Or' + groupIndex}
               className={
-                // isOrActive
-                //   ? cn('builder-or', 'grow rounded-md bg-white border-2 w-3/6 border-blue-300')
-                //   :
-                cn(
-                  'builder-and',
-                  'grow rounded-md bg-blue-300 p-2 w-3/6 hover:bg-white border-2 border-blue-300',
-                )
+                isOrActive[groupIndex]
+                  ? cn('builder-or', 'grow rounded-md bg-white border-2 w-3/6 border-blue-300')
+                  : cn(
+                      'builder-or',
+                      'grow rounded-md bg-blue-300 p-2 w-3/6 hover:bg-white border-2 border-blue-300',
+                    )
               }
-              onClick={(event: any) => {
-                setOrOperator(event);
+              onClick={() => {
+                setOrOperator(groupIndex);
               }}
             >
               Or
@@ -273,148 +266,32 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
     setValue(initDS);
     setAnd(false);
     setOr(false);
-    // setAndActive(false);
-    // setOrActive(false);
+    setAndActive([]);
+    setOrActive([]);
   };
 
-  const setAndOperator = (event: any) => {
+  const setAndOperator = (index: number) => {
     setOr(isAnd);
     setAnd(!isAnd);
-    var selectedButton = document.getElementById(event.currentTarget.id);
-    if (selectedButton) {
-      selectedButton.classList.remove(
-        'bg-blue-300',
-        'border-white',
-        'hover:bg-white',
-        'border-blue-300',
-      );
-      selectedButton.classList.add(
-        'bg-white',
-        'border-blue-300',
-        'hover:bg-blue-300',
-        'border-white',
-      );
-    }
-    // setAndActive(true);
-    // setOrActive(false);
+    const updatedAndStates = [...isAndActive];
+    updatedAndStates[index] = !updatedAndStates[index];
+    setAndActive(updatedAndStates);
+    const updatedOrStates = [...isOrActive];
+    updatedOrStates[index] = !updatedAndStates[index];
+    setOrActive(updatedOrStates);
   };
 
-  const setOrOperator = (event: any) => {
+  const setOrOperator = (index: number) => {
     setAnd(isOr);
     setOr(!isOr);
-    var selectedButton = document.getElementById(event.currentTarget.id);
-    debugger;
-    if (selectedButton) {
-      selectedButton.classList.add(
-        'bg-white',
-        'border-blue-300',
-        'hover:bg-blue-300',
-        'border-white',
-      );
-      selectedButton.classList.remove(
-        'bg-blue-300',
-        'border-white',
-        'hover:bg-white',
-        'border-blue-300',
-      );
-    }
-    // setOrActive(true);
-    // setAndActive(false);
+    const updatedOrStates = [...isOrActive];
+    updatedOrStates[index] = !updatedOrStates[index];
+    setOrActive(updatedOrStates);
+    const updatedAndStates = [...isAndActive];
+    updatedAndStates[index] = !updatedOrStates[index];
+    setAndActive(updatedAndStates);
   };
 
-  ////////////////////////////////////////////////////////////////////////FE////////////////////////////////////////////////////////////////////////////////////////
-  // const applyQuery = (label: string, operator: string, inputValue: string) => {
-  //   //should return the output array??
-  //   //check if the value = '' set it to null or empty string
-  //   const queryOutput = [...value];
-  //   let output: any = [];
-  //   queryOutput.map((item: any) => {
-  //     let query: boolean = false;
-  //     // debugger;
-  //     switch (operator) {
-  //       case '===':
-  //         query = item[label] === inputValue;
-  //         break;
-  //       case '!=':
-  //         query = item[label] != inputValue;
-  //         break;
-  //       case 'contains':
-  //         query = item[label].includes(inputValue);
-  //         break;
-  //       case 'endsWith':
-  //         query = item[label].endsWith(inputValue);
-  //         break;
-  //       case 'startsWith':
-  //         query = item[label].startsWith(inputValue);
-  //         break;
-  //       //numbers
-  //       case '<':
-  //         query = Number(item[label]) < Number(inputValue);
-  //         break;
-  //       case '>':
-  //         query = Number(item[label]) > Number(inputValue);
-  //         break;
-  //       case 'between':
-  //         query = item[label] != inputValue;
-  //         break;
-  //       case 'in':
-  //         if (inputValue) query = inputValue in item; //use property index instead of inputva...?
-  //         break;
-  //       default:
-  //         console.log('by default test' + operator);
-  //     }
-  //     if (query) {
-  //       output.push(item);
-  //     }
-  //   });
-  //   return output;
-  // };
-
-  // const multipleQueries = () => {
-  //   //get the queries stored in each rule
-  //   // debugger;
-  //   const queries = groups.map((group, groupIndex) =>
-  //     group.rules.map((_, ruleIndex) => ({
-  //       label: selectedLabels[groupIndex][ruleIndex] || '',
-  //       operator: selectedOperators[groupIndex][ruleIndex] || '',
-  //       value: inputValues[groupIndex][ruleIndex] || '',
-  //     })),
-  //   );
-  //   if (queries[0].length === 1) {
-  //     const queryResult = applyQuery(
-  //       queries[0][0].label,
-  //       queries[0][0].operator,
-  //       queries[0][0].value,
-  //     );
-  //     // debugger
-  //     // ds.setValue('', queryResult); //not working
-  //     setValue(queryResult);
-  //   } else {
-  //     let output: any[] = [];
-  //     if (isAnd) {
-  //       queries.forEach((groupQueries) => {
-  //         const groupOutput = groupQueries.reduce((prevValue, groupItem) => {
-  //           const queryResult = applyQuery(groupItem.label, groupItem.operator, groupItem.value);
-  //           return prevValue.filter((item) => queryResult.includes(item));
-  //         }, value);
-  //         output.push(groupOutput);
-  //       });
-  //     }
-  //     if (isOr) {
-  //       queries.forEach((groupQueries) => {
-  //         const groupOutput = groupQueries.reduce((prevValue, groupItem) => {
-  //           const queryResult = applyQuery(groupItem.label, groupItem.operator, groupItem.value);
-  //           return prevValue.concat(queryResult.filter((item: any) => !prevValue.includes(item)));
-  //         }, []);
-  //         output.push(groupOutput);
-  //       });
-  //     }
-  //     // ds.setValue(null, output); //not working
-  //     setValue(output);
-  //   }
-  // };
-
-  /////////////////////////////////////////////////////////////////////////FE/////////////////////////////////////////////////////////////////////////////////////////
   const formQuery = () => {
     //rest path http://localhost:7080/rest/User?$filter="ID=65 OR name begin User1"
     //need to get the dataclass of the entity selection {dataclass} api
@@ -468,7 +345,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
         </div>
         <div
           className={cn('builder-footer', 'flex flex-row justify-end gap-2 p-2')}
-          onClick={() => formQuery()} //{multipleQueries}
+          onClick={() => formQuery()}
         >
           <button
             className={cn('builder-clear', 'rounded-md p-2 border-2 border-blue-300 bg-white')}
@@ -488,6 +365,4 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
 export default Querybuilder;
 
 //multiple queries case: multiple groups..
-//make add and or depend on each button..
 //set the output/value in the ds/loader..
-//query to be done in backend using REST..
