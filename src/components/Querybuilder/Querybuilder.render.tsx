@@ -295,31 +295,29 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
   const formQuery = () => {
     //rest path http://localhost:7080/rest/User?$filter="ID=65 OR name begin User1"
     //need to get the dataclass of the entity selection {dataclass} api
+    //get group 1 queries and combine with operator+group between the group queries with and
     let formedQuery: string = '/rest/User?$filter=';
-    const queries = groups.map((group, groupIndex) =>
-      group.rules.map((_, ruleIndex) => ({
+    groups.forEach((group, groupIndex) => {
+      const groupQueries = group.rules.map((_, ruleIndex) => ({
         label: selectedLabels[groupIndex][ruleIndex] || '',
         operator: selectedOperators[groupIndex][ruleIndex] || '',
         value: inputValues[groupIndex][ruleIndex] || '',
-      })),
-    );
-    queries[0].map((input) => {
-      console.log(input);
-      if (isAnd) {
-        formedQuery += ' ' + input.label + ' ' + input.operator + ' ' + input.value + ' and';
-      }
-      if (isOr) {
-        formedQuery += ' ' + input.label + ' ' + input.operator + ' ' + input.value + ' or';
-      }
-      if (!isAnd && !isOr) {
-        formedQuery += input.label + ' ' + input.operator + ' ' + input.value;
+      }));
+      groupQueries.forEach((queryPart, queryIndex) => {
+        formedQuery += queryPart.label + ' ' + queryPart.operator + ' ' + queryPart.value;
+        if (queryIndex < groupQueries.length - 1) {
+          if (isAndActive[groupIndex]) {
+            formedQuery += ' and ';
+          }
+          if (isOrActive[groupIndex]) {
+            formedQuery += ' or ';
+          }
+        }
+      });
+      if (groupIndex < groups.length - 1) {
+        formedQuery += ' and ';
       }
     });
-    debugger;
-    if (formedQuery.endsWith('and') || formedQuery.endsWith('or')) {
-      var lastIndex = formedQuery.lastIndexOf(' ');
-      formedQuery = formedQuery.substring(0, lastIndex);
-    }
     setQuery(formedQuery);
   };
 
@@ -364,5 +362,4 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
 
 export default Querybuilder;
 
-//multiple queries case: multiple groups..
 //set the output/value in the ds/loader..
