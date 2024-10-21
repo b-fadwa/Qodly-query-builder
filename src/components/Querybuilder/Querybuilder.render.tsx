@@ -11,11 +11,15 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
   const operator = useRef<HTMLSelectElement>(null);
   const [isAnd, setAnd] = useState<boolean>(false);
   const [isOr, setOr] = useState<boolean>(false);
+  const [isExcept, setExcept] = useState<boolean>(false);
   const [selectedLabels, setSelectedLabels] = useState<string[][]>([[]]);
   const [selectedOperators, setSelectedOperators] = useState<string[][]>([[]]);
   const [inputValues, setInputValues] = useState<string[][]>([[]]);
   const [isAndActive, setAndActive] = useState<boolean[]>(new Array(groups.length).fill(false));
   const [isOrActive, setOrActive] = useState<boolean[]>(new Array(groups.length).fill(false));
+  const [isExceptActive, setExceptActive] = useState<boolean[]>(
+    new Array(groups.length).fill(false),
+  );
   const [query, setQuery] = useState<string>('');
   const [properties, setProperties] = useState<any[]>([{ name: '', kind: '', type: '' }]);
   const [focusedInput, setFocusedInput] = useState({ groupIndex: 0, ruleIndex: 0 });
@@ -222,6 +226,21 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
             >
               Or
             </button>
+            <button
+              className={
+                isExceptActive[groupIndex]
+                  ? cn('builder-or', 'grow rounded-md bg-white border-2 w-3/6 border-blue-300')
+                  : cn(
+                      'builder-or',
+                      'grow rounded-md bg-blue-300 p-2 w-3/6 hover:bg-white border-2 border-blue-300',
+                    )
+              }
+              onClick={() => {
+                setExceptOperator(groupIndex);
+              }}
+            >
+              Except
+            </button>
           </div>
           <div>
             <button
@@ -293,6 +312,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
     setOr(false);
     setAndActive([]);
     setOrActive([]);
+    setExceptActive([]);
     setTimeout(() => {
       //fix to query cleaning
       setQuery('');
@@ -301,24 +321,47 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
 
   const setAndOperator = (index: number) => {
     setOr(isAnd);
+    setExcept(isAnd);
     setAnd(!isAnd);
     const updatedAndStates = [...isAndActive];
     updatedAndStates[index] = !updatedAndStates[index];
     setAndActive(updatedAndStates);
     const updatedOrStates = [...isOrActive];
-    updatedOrStates[index] = !updatedAndStates[index];
+    updatedOrStates[index] = false;
     setOrActive(updatedOrStates);
+    const updatedExceptStates = [...isExceptActive];
+    updatedExceptStates[index] = false;
+    setExceptActive(updatedExceptStates);
   };
 
   const setOrOperator = (index: number) => {
     setAnd(isOr);
+    setExcept(isOr);
     setOr(!isOr);
     const updatedOrStates = [...isOrActive];
     updatedOrStates[index] = !updatedOrStates[index];
     setOrActive(updatedOrStates);
     const updatedAndStates = [...isAndActive];
-    updatedAndStates[index] = !updatedOrStates[index];
+    updatedAndStates[index] = false;
     setAndActive(updatedAndStates);
+    const updatedExceptStates = [...isExceptActive];
+    updatedExceptStates[index] = false;
+    setExceptActive(updatedExceptStates);
+  };
+
+  const setExceptOperator = (index: number) => {
+    setAnd(isExcept);
+    setOr(isExcept);
+    setExcept(!isExcept);
+    const updatedExceptStates = [...isExceptActive];
+    updatedExceptStates[index] = !updatedExceptStates[index];
+    setExceptActive(updatedExceptStates);
+    const updatedAndStates = [...isAndActive];
+    updatedAndStates[index] = false;
+    setAndActive(updatedAndStates);
+    const updatedOrStates = [...isOrActive];
+    updatedOrStates[index] = false;
+    setOrActive(updatedOrStates);
   };
 
   const formQuery = () => {
@@ -337,6 +380,9 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
           }
           if (isOrActive[groupIndex]) {
             formedQuery += ' or ';
+          }
+          if (isExceptActive[groupIndex]) {
+            formedQuery += ' Except ';
           }
         }
       });
