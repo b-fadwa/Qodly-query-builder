@@ -1,20 +1,14 @@
-import { useRenderer, useSources } from '@ws-ui/webform-editor';
+import { useDataLoader, useRenderer, useSources } from '@ws-ui/webform-editor';
 import cn from 'classnames';
-import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FC, useEffect, useRef, useState } from 'react';
 
 import { IQuerybuilderProps } from './Querybuilder.config';
 import { FaRegTrashAlt } from 'react-icons/fa';
-import { DataLoader } from '@ws-ui/webform-editor';
-
 const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [] }) => {
   const { connect } = useRenderer();
-  const [value, setValue] = useState<datasources.IEntity[]>([]);
-  const [initDS, setDS] = useState<datasources.IEntity[]>([]);
   const [groups, setGroups] = useState([{ rules: [{}] }]);
-  const [dsFields, setFields] = useState<string[]>([]);
   const labelSelect = useRef<HTMLSelectElement>(null);
   const operator = useRef<HTMLSelectElement>(null);
-  const inputValue = useRef<HTMLInputElement>(null);
   const [isAnd, setAnd] = useState<boolean>(false);
   const [isOr, setOr] = useState<boolean>(false);
   const [selectedLabels, setSelectedLabels] = useState<string[][]>([[]]);
@@ -23,37 +17,29 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
   const [isAndActive, setAndActive] = useState<boolean[]>(new Array(groups.length).fill(false));
   const [isOrActive, setOrActive] = useState<boolean[]>(new Array(groups.length).fill(false));
   const [query, setQuery] = useState<string>('');
+  const [properties, setProperties] = useState<string[]>([]);
+  const [focusedInput, setFocusedInput] = useState({ groupIndex: 0, ruleIndex: 0 });
+  const inputRefs = useRef<{
+    [groupIndex: number]: { [ruleIndex: number]: HTMLInputElement | null };
+  }>({});
 
   const {
     sources: { datasource: ds },
   } = useSources();
 
+  const { entities, fetchIndex } = useDataLoader({
+    source: ds,
+  });
+
   useEffect(() => {
+    if (!ds) return;
+    //get ds props
+    setProperties(Object.keys(ds.dataclass._private.attributes));
+    fetchIndex(0);
     setGroups([{ rules: [{}] }]);
     setSelectedLabels([[]]);
     setSelectedOperators([[]]);
     setInputValues([[]]);
-  }, []);
-
-  const loader = useMemo<DataLoader | null>(() => {
-    if (!ds) {
-      return null;
-    }
-    return DataLoader.create(ds, Object.getOwnPropertyNames(ds.dataclass).splice(1));
-  }, [Object.getOwnPropertyNames(ds?.dataclass).splice(1), ds]);
-
-  const updateFromLoader = useCallback(() => {
-    if (!loader) {
-      return;
-    }
-    setValue(loader.page);
-    setDS(loader.page);
-    setFields(loader.attributes);
-  }, [loader]);
-
-  useEffect(() => {
-    if (!loader || !ds) return;
-    loader.sourceHasChanged().then(updateFromLoader);
   }, []);
 
   const generateRule = (groupIndex: number) => {
@@ -94,13 +80,17 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
     const updatedValues = [...inputValues];
     updatedValues[groupIndex][ruleIndex] = v;
     setInputValues(updatedValues);
+    setFocusedInput({ ruleIndex, groupIndex });
   };
 
   useEffect(() => {
-    if (inputValue.current) {
-      inputValue.current.focus();
+    //fix for the input text issue when loosing focus at each rerender
+    if (focusedInput.groupIndex != null && focusedInput.ruleIndex != null && inputRefs) {
+      const input = inputRefs.current[focusedInput.groupIndex]?.[focusedInput.ruleIndex];
+
+      if (input) input.focus();
     }
-  }, [inputValue.current]);
+  }, [inputValues]);
 
   const NewRule = ({ ruleIndex, groupIndex }: { ruleIndex: number; groupIndex: number }) => {
     return (
@@ -114,7 +104,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
           }}
         >
           <option value="">Property</option>
-          {dsFields.map((attribute) => (
+          {properties.map((attribute) => (
             <option value={attribute}>{attribute}</option>
           ))}
         </select>
@@ -142,7 +132,12 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
         <input
           type="text"
           placeholder="Value"
-          ref={inputValue}
+          ref={(input) => {
+            if (!inputRefs.current[groupIndex]) {
+              inputRefs.current[groupIndex] = {};
+            }
+            inputRefs.current[groupIndex][ruleIndex] = input;
+          }}
           className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
           value={inputValues[groupIndex][ruleIndex]}
           onChange={(v) => {
@@ -263,11 +258,11 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
     setSelectedLabels([[]]);
     setSelectedOperators([[]]);
     setInputValues([[]]);
-    setValue(initDS);
     setAnd(false);
     setOr(false);
     setAndActive([]);
     setOrActive([]);
+    setQuery(''); //to re-check ! issue when clearing
   };
 
   const setAndOperator = (index: number) => {
@@ -293,15 +288,12 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
   };
 
   const formQuery = () => {
-    //rest path http://localhost:7080/rest/User?$filter="ID=65 OR name begin User1"
-    //need to get the dataclass of the entity selection {dataclass} api
-    //get group 1 queries and combine with operator+group between the group queries with and
-    let formedQuery: string = '/rest/User?$filter=';
+    let formedQuery: string = '';
     groups.forEach((group, groupIndex) => {
       const groupQueries = group.rules.map((_, ruleIndex) => ({
         label: selectedLabels[groupIndex][ruleIndex] || '',
         operator: selectedOperators[groupIndex][ruleIndex] || '',
-        value: inputValues[groupIndex][ruleIndex] || '',
+        value: '"' + inputValues[groupIndex][ruleIndex] + '"',
       }));
       groupQueries.forEach((queryPart, queryIndex) => {
         formedQuery += queryPart.label + ' ' + queryPart.operator + ' ' + queryPart.value;
@@ -321,18 +313,31 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
     setQuery(formedQuery);
   };
 
+  const fetchData = () => {
+    // const { entitysel } = ds as any;
+    if (query !== '' && query !== '  "undefined"') {
+      console.log('fetching...');
+      (ds as any).entitysel = ds.dataclass.query(query);
+    } else {
+      console.log('fetching all...');
+      (ds as any).entitysel = ds.dataclass.allEntities({});
+    }
+    fetchIndex(0); //doing: handling case when i clear and i should get all data again
+    // console.log(entities.length);
+  };
+
   useEffect(() => {
-    fetch(query)
-      .then((response) => response.json())
-      .then((data) => {
-        setValue(data), console.log(data);
-      })
-      .catch((error) => console.log(error));
-    console.log(value);
+    // if (query)
+    console.log('query changed!!!!!', { query });
+    fetchData();
   }, [query]);
 
   return (
     <div ref={connect} style={style} className={cn(className, classNames)}>
+      {/* <span>{entities.length}</span> */}
+      {entities.map((e) => (
+        <span>{JSON.stringify(e)}</span>
+      ))}
       <div className={cn('builder', 'flex flex-col gap-4 h-full bg-slate-200 p-2')}>
         <div className={cn('builder-body', 'flex flex-col grow p-2')}>
           {groups.map(({}, index) => (
@@ -354,12 +359,8 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
           <button className={cn('builder-apply', 'rounded-md bg-blue-300 p-2')}>Apply</button>
         </div>
       </div>
-      {/* to test will be removed!!!!!!!!!!!!!!!! */}
-      <div>{JSON.stringify(value)}</div>
     </div>
   );
 };
 
 export default Querybuilder;
-
-//set the output/value in the ds/loader..
