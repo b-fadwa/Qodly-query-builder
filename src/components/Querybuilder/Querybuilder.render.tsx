@@ -262,7 +262,10 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
     setOr(false);
     setAndActive([]);
     setOrActive([]);
-    setQuery(''); //to re-check ! issue when clearing
+    setTimeout(() => {
+      //fix to query cleaning
+      setQuery('');
+    }, 0);
   };
 
   const setAndOperator = (index: number) => {
@@ -314,7 +317,6 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
   };
 
   const fetchData = () => {
-    // const { entitysel } = ds as any;
     if (query !== '' && query !== '  "undefined"') {
       console.log('fetching...');
       (ds as any).entitysel = ds.dataclass.query(query);
@@ -322,19 +324,15 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
       console.log('fetching all...');
       (ds as any).entitysel = ds.dataclass.allEntities({});
     }
-    fetchIndex(0); //doing: handling case when i clear and i should get all data again
-    // console.log(entities.length);
+    fetchIndex(0);
   };
 
   useEffect(() => {
-    // if (query)
-    console.log('query changed!!!!!', { query });
     fetchData();
   }, [query]);
 
   return (
     <div ref={connect} style={style} className={cn(className, classNames)}>
-      {/* <span>{entities.length}</span> */}
       {entities.map((e) => (
         <span>{JSON.stringify(e)}</span>
       ))}
