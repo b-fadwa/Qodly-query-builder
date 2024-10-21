@@ -47,15 +47,14 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
               className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
             ></input>
             <select className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}>
-              <option value="==">==</option>
+              <option value="">Operator</option>
+              <option value="=">=</option>
               <option value="!=">!=</option>
               <option value="&lt;">&lt;</option>
               <option value="&gt;">&gt;</option>
-              <option value="endsWith">Ends with</option>
-              <option value="startsWith">Starts with</option>
-              <option value="contains">Contains</option>
-              <option value="between">Between</option>
-              <option value="in">In</option>z
+              <option value="&lt;=">&lt;=</option>
+              <option value="&gt;=">&gt;=</option>
+              <option value="begin">Starts with</option>
             </select>
             <input
               type="text"
@@ -73,7 +72,11 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
           </div>
         </div>
         <div className={cn('builder-footer', 'flex flex-row justify-end gap-2 p-2')}>
-          <button className={cn('builder-clear', 'rounded-md p-2 border-2 border-blue-300 bg-white')}>Clear</button>
+          <button
+            className={cn('builder-clear', 'rounded-md p-2 border-2 border-blue-300 bg-white')}
+          >
+            Clear
+          </button>
           <button className={cn('builder-apply', 'rounded-md bg-blue-300 p-2')}>Apply</button>
         </div>
       </div>

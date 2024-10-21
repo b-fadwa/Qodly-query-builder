@@ -1,6 +1,6 @@
 import { EComponentKind, T4DComponentConfig } from '@ws-ui/webform-editor';
 import { Settings } from '@ws-ui/webform-editor';
-import { MdOutlineTextSnippet } from 'react-icons/md';
+import { CiSearch } from 'react-icons/ci';
 
 import QuerybuilderSettings, { BasicSettings } from './Querybuilder.settings';
 
@@ -20,7 +20,7 @@ export default {
   info: {
     displayName: 'Querybuilder',
     exposed: true,
-    icon: MdOutlineTextSnippet,
+    icon: CiSearch,
     events: [
       {
         label: 'On Click',

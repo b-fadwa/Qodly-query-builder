@@ -17,7 +17,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
   const [isAndActive, setAndActive] = useState<boolean[]>(new Array(groups.length).fill(false));
   const [isOrActive, setOrActive] = useState<boolean[]>(new Array(groups.length).fill(false));
   const [query, setQuery] = useState<string>('');
-  const [properties, setProperties] = useState<string[]>([]);
+  const [properties, setProperties] = useState<any[]>([{ name: '', kind: '', type: '' }]);
   const [focusedInput, setFocusedInput] = useState({ groupIndex: 0, ruleIndex: 0 });
   const inputRefs = useRef<{
     [groupIndex: number]: { [ruleIndex: number]: HTMLInputElement | null };
@@ -27,14 +27,53 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
     sources: { datasource: ds },
   } = useSources();
 
-  const { entities, fetchIndex } = useDataLoader({
+  const { fetchIndex } = useDataLoader({
     source: ds,
   });
 
   useEffect(() => {
     if (!ds) return;
     //get ds props
-    setProperties(Object.keys(ds.dataclass._private.attributes));
+    //do not display all relatedEntities
+    const formattedProperties = Object.values(ds.dataclass.getAllAttributes())
+      .filter((item: any) => item.kind !== 'relatedEntities')
+      .map((item: any) => ({
+        name: item.name,
+        kind: item.kind,
+        type: item.type,
+      }));
+
+    const combinedProperties = [...formattedProperties];
+    //manage nested entitiesRelations
+    const processAttributes = (attributes: any[], dataClassName: string) => {
+      attributes.forEach((item: any) => {
+        if (item.kind === 'relatedEntities') {
+          const dataType = item.type.replace('Selection', '');
+          const relatedEntityAttributes = Object.values(
+            (ds.dataclass._private.datastore as any)[dataType].getAllAttributes(),
+          );
+          // Recursively process related entity attributes
+          processAttributes(relatedEntityAttributes, dataClassName + item.name + '.');
+        } else {
+          combinedProperties.push({
+            name: dataClassName + item.name,
+            kind: item.kind,
+            type: item.type,
+          });
+        }
+      });
+    };
+
+    Object.values(ds.dataclass.getAllAttributes()).forEach((item: any) => {
+      if (item.kind === 'relatedEntities') {
+        const dataType = item.type.replace('Selection', '');
+        const relatedEntityAttributes = Object.values(
+          (ds.dataclass._private.datastore as any)[dataType].getAllAttributes(),
+        );
+        processAttributes(relatedEntityAttributes, item.name + '.');
+      }
+    });
+    setProperties(combinedProperties);
     fetchIndex(0);
     setGroups([{ rules: [{}] }]);
     setSelectedLabels([[]]);
@@ -105,7 +144,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
         >
           <option value="">Property</option>
           {properties.map((attribute) => (
-            <option value={attribute}>{attribute}</option>
+            <option value={attribute.name}>{attribute.name}</option>
           ))}
         </select>
         <select
@@ -124,10 +163,6 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
           <option value="&lt;=">&lt;=</option>
           <option value="&gt;=">&gt;=</option>
           <option value="begin">Starts with</option>
-          <option value="endsWith">Ends with (not handled in $filter?)</option>
-          <option value="contains">Contains (not handled in $filter?)</option>
-          <option value="between">Between(not handled in $filter?)</option>
-          <option value="in">In (not handled in $filter?)</option>
         </select>
         <input
           type="text"
@@ -215,7 +250,6 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
           {groups[groupIndex].rules.map(({}, ruleIndex) => (
             <div key={ruleIndex} className={cn('builder-rule', 'flex items-center')}>
               <NewRule ruleIndex={ruleIndex} groupIndex={groupIndex} />
-              <span>{ruleIndex}</span>
               <button
                 className={cn(
                   'builder-remove',
@@ -233,10 +267,9 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
   };
 
   const removeRule = (groupIndex: number, ruleIndex: number) => {
-    if (ruleIndex != 0) {
-      // let updatedGroups = [...groups];
-      // updatedGroups[groupIndex].rules.splice(ruleIndex, 1);
-      // setGroups(updatedGroups);
+    if (groupIndex == 0 && ruleIndex == 0) {
+      window.confirm('Cannot remove the by default rule');
+    } else {
       setGroups((prevGroups) => {
         let updatedGroups = [...prevGroups];
         updatedGroups[groupIndex].rules.splice(ruleIndex, 1); //logically correct but visually no (it gets executed twice)
@@ -246,8 +279,6 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
         updateOperator('', ruleIndex, groupIndex);
         return updatedGroups;
       });
-    } else {
-      window.confirm('Cannot remove the by default rule');
     }
     return;
   };
@@ -318,10 +349,8 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
 
   const fetchData = () => {
     if (query !== '' && query !== '  "undefined"') {
-      console.log('fetching...');
       (ds as any).entitysel = ds.dataclass.query(query);
     } else {
-      console.log('fetching all...');
       (ds as any).entitysel = ds.dataclass.allEntities({});
     }
     fetchIndex(0);
@@ -333,16 +362,15 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
 
   return (
     <div ref={connect} style={style} className={cn(className, classNames)}>
-      {entities.map((e) => (
-        <span>{JSON.stringify(e)}</span>
-      ))}
       <div className={cn('builder', 'flex flex-col gap-4 h-full bg-slate-200 p-2')}>
         <div className={cn('builder-body', 'flex flex-col grow p-2')}>
-          {groups.map(({}, index) => (
-            <div key={index}>
-              <NewGroup groupIndex={index} />
-            </div>
-          ))}
+          {groups
+            .filter((group) => group.rules.length !== 0)
+            .map(({}, index) => (
+              <div key={index}>
+                <NewGroup groupIndex={index} />
+              </div>
+            ))}
         </div>
         <div
           className={cn('builder-footer', 'flex flex-row justify-end gap-2 p-2')}
