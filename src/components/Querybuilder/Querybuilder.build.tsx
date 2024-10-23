@@ -12,29 +12,38 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
 
   return (
     <div ref={connect} style={style} className={cn(className, classNames)}>
-      <div className={cn('builder', 'flex flex-col h-full gap-4 bg-slate-200 p-2')}>
+      <div className={cn('builder', 'flex flex-col h-full gap-4 bg-grey-800 p-2 rounded-lg')}>
         <div
-          className={cn('builder-header', 'flex flex-row justify-start items-center gap-10 h-fit ')}
+          className={cn(
+            'builder-header',
+            'flex flex-row justify-between items-center gap-10 h-fit ',
+          )}
         >
-          <div className={cn('builder-andOr', 'flex flex-row w-40 gap-2 ')}>
+          <div className={cn('builder-andOrExcept', 'flex flex-row w-1/5 h-10 gap-1')}>
             <button
-              className={cn('builder-and', 'grow rounded-md bg-blue-300 active:bg-blue-600 p-2')}
+              className={cn('builder-and', 'grow rounded-md border-2 border-purple-400 bg-white ')}
             >
               And
             </button>
             <button
-              className={cn('builder-or', 'grow rounded-md bg-blue-300 p-2 active:bg-blue-800')}
+              className={cn('builder-or', 'grow rounded-md border-2 border-purple-400 bg-white')}
             >
               Or
             </button>
-          </div>
-          <div>
-            <button className={cn('builder-rule', 'grow rounded-md bg-blue-300 p-2')}>
-              + Rule
+            <button
+              className={cn(
+                'builder-except',
+                'grow rounded-md border-2 border-purple-400 bg-white',
+              )}
+            >
+              Except
             </button>
           </div>
-          <div>
-            <button className={cn('builder-group', 'grow rounded-md bg-blue-300 p-2')}>
+          <div className="flex flex-row justify-start gap-1 w-1/6 h-10">
+            <button className={cn('builder-rule', 'grow rounded-md bg-purple-400 w-1/2')}>
+              + Rule
+            </button>
+            <button className={cn('builder-group', 'grow rounded-md bg-purple-400 w-1/2')}>
               + Group
             </button>
           </div>
@@ -71,13 +80,18 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
             </button>
           </div>
         </div>
-        <div className={cn('builder-footer', 'flex flex-row justify-end gap-2 p-2')}>
-          <button
-            className={cn('builder-clear', 'rounded-md p-2 border-2 border-blue-300 bg-white')}
-          >
-            Clear
-          </button>
-          <button className={cn('builder-apply', 'rounded-md bg-blue-300 p-2')}>Apply</button>
+        <div className={cn('builder-footer', 'w-full flex flex-row justify-end')}>
+          <div className="flex gap-1 h-10 w-1/6">
+            <button
+              className={cn(
+                'builder-clear',
+                'rounded-md border-2 border-purple-400 bg-white w-1/2',
+              )}
+            >
+              Clear
+            </button>
+            <button className={cn('builder-apply', 'rounded-md bg-purple-400 w-1/2')}>Apply</button>
+          </div>
         </div>
       </div>
     </div>

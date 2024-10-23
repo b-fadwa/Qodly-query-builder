@@ -190,116 +190,138 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
   const NewGroup = ({ groupIndex }: { groupIndex: number }) => {
     //extract groupIndex from the newGroup
     return (
-      <div
-        id={'group' + groupIndex}
-        className={cn('builder', 'flex flex-col gap-4 h-full bg-slate-200 p-2')}
-      >
-        <div
-          className={cn('builder-header', 'flex flex-row justify-start items-center gap-10 h-fit')}
-        >
-          <div className={cn('builder-andOr', 'flex flex-row w-40 gap-2 ')}>
-            <button
-              className={
-                isAndActive[groupIndex]
-                  ? cn('builder-and', 'grow rounded-md bg-white border-2 w-3/6 border-blue-300')
-                  : cn(
-                      'builder-and',
-                      'grow rounded-md bg-blue-300 w-3/6 p-2 hover:bg-white border-2 border-blue-300',
-                    )
-              }
-              onClick={() => setAndOperator(groupIndex)}
-            >
-              And
-            </button>
-            <button
-              className={
-                isOrActive[groupIndex]
-                  ? cn('builder-or', 'grow rounded-md bg-white border-2 w-3/6 border-blue-300')
-                  : cn(
-                      'builder-or',
-                      'grow rounded-md bg-blue-300 p-2 w-3/6 hover:bg-white border-2 border-blue-300',
-                    )
-              }
-              onClick={() => {
-                setOrOperator(groupIndex);
-              }}
-            >
-              Or
-            </button>
-            <button
-              className={
-                isExceptActive[groupIndex]
-                  ? cn('builder-or', 'grow rounded-md bg-white border-2 w-3/6 border-blue-300')
-                  : cn(
-                      'builder-or',
-                      'grow rounded-md bg-blue-300 p-2 w-3/6 hover:bg-white border-2 border-blue-300',
-                    )
-              }
-              onClick={() => {
-                setExceptOperator(groupIndex);
-              }}
-            >
-              Except
-            </button>
-          </div>
-          <div>
-            <button
+      <>
+        {groups[groupIndex].rules.length > 0 && (
+          <div
+            id={'group' + groupIndex}
+            className={cn(
+              'builder',
+              'flex flex-col gap-4 h-full border border-slate-200 rounded-lg p-2',
+            )}
+          >
+            <div
               className={cn(
-                'builder-rule',
-                'grow rounded-md bg-blue-300 p-2 hover:bg-white border-2 border-blue-300',
+                'builder-header',
+                'flex flex-row justify-between items-center gap-10 h-fit ',
               )}
-              onClick={() => generateRule(groupIndex)}
             >
-              + Rule
-            </button>
-          </div>
-          <div>
-            <button
-              className={cn(
-                'builder-group',
-                'grow rounded-md bg-blue-300 p-2 hover:bg-white border-2 border-blue-300',
-              )}
-              onClick={generateGroup}
-            >
-              + Group
-            </button>
-          </div>
-        </div>
-        <div className={cn('builder-body', 'flex flex-col grow p-2')}>
-          {groups[groupIndex].rules.map(({}, ruleIndex) => (
-            <div key={ruleIndex} className={cn('builder-rule', 'flex items-center')}>
-              <NewRule ruleIndex={ruleIndex} groupIndex={groupIndex} />
-              <button
-                className={cn(
-                  'builder-remove',
-                  'bg-white h-fit p-3 rounded-md border-2 border-rose-500 text-rose-500',
-                )}
-                onClick={() => removeRule(groupIndex, ruleIndex)}
-              >
-                <FaRegTrashAlt />
-              </button>
+              <div className={cn('builder-andOrExcept', 'flex flex-row w-1/5 h-10 gap-2')}>
+                <button
+                  className={
+                    isAndActive[groupIndex]
+                      ? cn('builder-and', 'grow rounded-md border-2 bg-purple-400')
+                      : cn('builder-and', ' grow rounded-md border-2  border-purple-400 bg-white')
+                  }
+                  onClick={() => setAndOperator(groupIndex)}
+                >
+                  And
+                </button>
+                <button
+                  className={
+                    isOrActive[groupIndex]
+                      ? cn('builder-or', 'grow rounded-md  border-2 bg-purple-400')
+                      : cn(
+                          'builder-or',
+                          'grow rounded-md border-2 border-purple-400 bg-white hover:bg-sky-700',
+                        )
+                  }
+                  onClick={() => {
+                    setOrOperator(groupIndex);
+                  }}
+                >
+                  Or
+                </button>
+                <button
+                  className={
+                    isExceptActive[groupIndex]
+                      ? cn('builder-except', 'grow rounded-md  border-2 bg-purple-400')
+                      : cn('builder-except', 'grow rounded-md border-2 border-purple-400 bg-white ')
+                  }
+                  onClick={() => {
+                    setExceptOperator(groupIndex);
+                  }}
+                >
+                  Except
+                </button>
+              </div>
+              <div className="flex flex-row justify-start gap-1 w-1/6 h-10">
+                <button
+                  className={cn('builder-rule', 'grow rounded-md bg-purple-400 w-1/2')}
+                  onClick={() => generateRule(groupIndex)}
+                >
+                  + Rule
+                </button>
+                <button
+                  className={cn('builder-group', 'grow rounded-md bg-purple-400 w-1/2')}
+                  onClick={generateGroup}
+                >
+                  + Group
+                </button>
+              </div>
             </div>
-          ))}
-        </div>
-      </div>
+            <div className={cn('builder-body', 'flex flex-col grow p-2')}>
+              {groups[groupIndex].rules.map(({}, ruleIndex) => (
+                <div key={ruleIndex} className={cn('builder-rule', 'flex items-center')}>
+                  <NewRule ruleIndex={ruleIndex} groupIndex={groupIndex} />
+                  <button
+                    className={cn(
+                      'builder-remove',
+                      'bg-white h-fit p-3 rounded-md border-2 border-rose-500 text-rose-500',
+                    )}
+                    onClick={() => removeRule(groupIndex, ruleIndex)}
+                  >
+                    <FaRegTrashAlt />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </>
     );
   };
 
   const removeRule = (groupIndex: number, ruleIndex: number) => {
     if (groupIndex == 0 && ruleIndex == 0) {
       window.confirm('Cannot remove the by default rule');
-    } else {
-      setGroups((prevGroups) => {
-        let updatedGroups = [...prevGroups];
-        updatedGroups[groupIndex].rules.splice(ruleIndex, 1); //logically correct but visually no (it gets executed twice)
-        //remove inputs
-        updateInput('', ruleIndex, groupIndex);
-        updateLabel('', ruleIndex, groupIndex);
-        updateOperator('', ruleIndex, groupIndex);
-        return updatedGroups;
-      });
+      return;
     }
-    return;
+    setGroups((prevGroups) => {
+      return prevGroups.map((group, groupId) => {
+        if (groupId === groupIndex) {
+          return {
+            ...group,
+            rules: group.rules.filter((_, ruleId) => ruleId !== ruleIndex),
+          };
+        }
+        return group;
+      });
+    });
+    //update the related fields
+    setSelectedLabels((prevLabels) => {
+      return prevLabels.map((labelGroup, groupId) => {
+        if (groupId === groupIndex) {
+          return labelGroup.filter((_, ruleId) => ruleId !== ruleIndex);
+        }
+        return labelGroup;
+      });
+    });
+    setSelectedOperators((prevOperators) => {
+      return prevOperators.map((operatorGroup, groupId) => {
+        if (groupId === groupIndex) {
+          return operatorGroup.filter((_, ruleId) => ruleId !== ruleIndex);
+        }
+        return operatorGroup;
+      });
+    });
+    setInputValues((prevInputs) => {
+      return prevInputs.map((inputGroup, groupId) => {
+        if (groupId === groupIndex) {
+          return inputGroup.filter((_, ruleId) => ruleId !== ruleIndex);
+        }
+        return inputGroup;
+      });
+    });
   };
 
   const clearBuilder = () => {
@@ -408,27 +430,30 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
 
   return (
     <div ref={connect} style={style} className={cn(className, classNames)}>
-      <div className={cn('builder', 'flex flex-col gap-4 h-full bg-slate-200 p-2')}>
-        <div className={cn('builder-body', 'flex flex-col grow p-2')}>
-          {groups
-            .filter((group) => group.rules.length !== 0)
-            .map(({}, index) => (
-              <div key={index}>
-                <NewGroup groupIndex={index} />
-              </div>
-            ))}
+      <div className={cn('builder', 'flex flex-col h-full gap-4 bg-gray-800 rounded-lg p-2')}>
+        <div className={cn('builder-body', 'flex flex-col grow gap-2 p-2')}>
+          {groups.map(({}, index) => (
+            <div key={index}>
+              <NewGroup groupIndex={index} />
+            </div>
+          ))}
         </div>
         <div
-          className={cn('builder-footer', 'flex flex-row justify-end gap-2 p-2')}
+          className={cn('builder-footer', 'w-full flex flex-row justify-end')}
           onClick={() => formQuery()}
         >
-          <button
-            className={cn('builder-clear', 'rounded-md p-2 border-2 border-blue-300 bg-white')}
-            onClick={() => clearBuilder()}
-          >
-            Clear
-          </button>
-          <button className={cn('builder-apply', 'rounded-md bg-blue-300 p-2')}>Apply</button>
+          <div className="flex gap-1 h-10 w-1/6">
+            <button
+              className={cn(
+                'builder-clear',
+                'rounded-md border-2 border-purple-400 bg-white w-1/2',
+              )}
+              onClick={() => clearBuilder()}
+            >
+              Clear
+            </button>
+            <button className={cn('builder-apply', 'rounded-md bg-purple-400 w-1/2')}>Apply</button>
+          </div>
         </div>
       </div>
     </div>
