@@ -78,7 +78,6 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
       }
     });
     setProperties(combinedProperties);
-    fetchIndex(0);
     setGroups([{ rules: [{}] }]);
     setSelectedLabels([[]]);
     setSelectedOperators([[]]);
@@ -415,16 +414,18 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
     setQuery(formedQuery);
   };
 
-  const fetchData = () => {
-    if (query !== '' && query !== '  "undefined"') {
-      (ds as any).entitysel = ds.dataclass.query(query);
-    } else {
-      (ds as any).entitysel = ds.dataclass.allEntities({});
-    }
-    fetchIndex(0);
-  };
-
   useEffect(() => {
+    const queryString = query === '' || query.includes('undefined') ? '' : query;
+    const fetchData = () => {
+      const { entitysel } = ds as any;
+      const dataSetName = entitysel?.getServerRef();
+      (ds as any).entitysel = ds.dataclass.query(queryString, {
+        dataSetName,
+        filterAttributes: ds.filterAttributesText || entitysel._private.filterAttributes,
+      });
+      fetchIndex(0);
+      ds.fireEvent('changed');
+    };
     fetchData();
   }, [query]);
 
