@@ -197,14 +197,17 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
     return (
       <>
         {groups[groupIndex].rules.length > 0 && (
-          <>
+          <div className="builder-group-container flex flex-col gap-1">
             {groupIndex !== 0 && (
-              <div className="flex flex-row w-1/2 h-10 gap-2">
+              <div className="builder-group-operators flex flex-row w-1/3 h-10 gap-2">
                 <button
                   className={
                     isAndGroupActive[groupIndex]
-                      ? cn('builder-and', 'grow rounded-md border-2  border-purple-400 bg-white')
-                      : cn('builder-and', ' grow rounded-md border-2 bg-purple-400')
+                      ? cn(
+                          'builder-and-group',
+                          'grow rounded-md border-2  border-purple-400 bg-white',
+                        )
+                      : cn('builder-and-group', ' grow rounded-md border-2 bg-purple-400')
                   }
                   onClick={() => setGroupAndOperator(groupIndex)}
                 >
@@ -213,8 +216,11 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
                 <button
                   className={
                     isOrGroupActive[groupIndex]
-                      ? cn('builder-and', 'grow rounded-md border-2  border-purple-400 bg-white')
-                      : cn('builder-and', ' grow rounded-md border-2 bg-purple-400')
+                      ? cn(
+                          'builder-or-group',
+                          'grow rounded-md border-2  border-purple-400 bg-white',
+                        )
+                      : cn('builder-or-group', ' grow rounded-md border-2 bg-purple-400')
                   }
                   onClick={() => setGroupOrOperator(groupIndex)}
                 >
@@ -309,7 +315,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
                 ))}
               </div>
             </div>
-          </>
+          </div>
         )}
       </>
     );
@@ -486,14 +492,14 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
   useEffect(() => {
     if (!query) return;
     const queryString = query === ' ' || query?.includes('undefined') ? '' : query;
-    const fetchData = () => {
+    const fetchData = async () => {
       const { entitysel } = ds as any;
       const dataSetName = entitysel?.getServerRef();
       (ds as any).entitysel = ds.dataclass.query(queryString, {
         dataSetName,
         filterAttributes: ds.filterAttributesText || entitysel._private.filterAttributes,
       });
-      fetchIndex(0);
+      await fetchIndex(0);
       ds.fireEvent('changed');
     };
     fetchData();
