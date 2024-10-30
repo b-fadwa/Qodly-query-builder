@@ -7,21 +7,28 @@ import { FaRegTrashAlt } from 'react-icons/fa';
 const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [] }) => {
   const { connect } = useRenderer();
   const [groups, setGroups] = useState([{ rules: [{}] }]);
+  //query properties states
+  const [query, setQuery] = useState<string | null>(null);
+  const [properties, setProperties] = useState<any[]>([]);
   const labelSelect = useRef<HTMLSelectElement>(null);
   const operator = useRef<HTMLSelectElement>(null);
-  const [isAnd, setAnd] = useState<boolean>(false);
-  const [isOr, setOr] = useState<boolean>(false);
-  const [isExcept, setExcept] = useState<boolean>(false);
   const [selectedLabels, setSelectedLabels] = useState<string[][]>([[]]);
   const [selectedOperators, setSelectedOperators] = useState<string[][]>([[]]);
   const [inputValues, setInputValues] = useState<string[][]>([[]]);
-  const [isAndActive, setAndActive] = useState<boolean[]>(new Array(groups.length).fill(false));
-  const [isOrActive, setOrActive] = useState<boolean[]>(new Array(groups.length).fill(false));
-  const [isExceptActive, setExceptActive] = useState<boolean[]>(
-    new Array(groups.length).fill(false),
-  );
-  const [query, setQuery] = useState<string>('');
-  const [properties, setProperties] = useState<any[]>([{ name: '', kind: '', type: '' }]);
+  // and , or , except states for each group rules
+  const [isAnd, setAnd] = useState<boolean>(false);
+  const [isOr, setOr] = useState<boolean>(false);
+  const [isExcept, setExcept] = useState<boolean>(false);
+  const [isAndActive, setAndActive] = useState<boolean[]>([]);
+  const [isOrActive, setOrActive] = useState<boolean[]>([]);
+  const [isExceptActive, setExceptActive] = useState<boolean[]>([]);
+  //and , or states for each group
+  const [isAndGroup, setGroupAnd] = useState<boolean>(false);
+  const [isOrGroup, setGroupOr] = useState<boolean>(false);
+  const [isAndGroupActive, setAndGroupActive] = useState<boolean[]>([]);
+  const [isOrGroupActive, setOrGroupActive] = useState<boolean[]>([]);
+  const [groupOperators, setGroupOperators] = useState<string[]>([]);
+  //input focus states
   const [focusedInput, setFocusedInput] = useState({ groupIndex: 0, ruleIndex: 0 });
   const inputRefs = useRef<{
     [groupIndex: number]: { [ruleIndex: number]: HTMLInputElement | null };
@@ -37,8 +44,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
 
   useEffect(() => {
     if (!ds) return;
-    //get ds props
-    //do not display all relatedEntities
+    //get ds props + do not display all relatedEntities
     const formattedProperties = Object.values(ds.dataclass.getAllAttributes())
       .filter((item: any) => item.kind !== 'relatedEntities')
       .map((item: any) => ({
@@ -191,90 +197,119 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
     return (
       <>
         {groups[groupIndex].rules.length > 0 && (
-          <div
-            id={'group' + groupIndex}
-            className={cn(
-              'builder',
-              'flex flex-col gap-4 h-full border border-slate-200 rounded-lg p-2',
-            )}
-          >
-            <div
-              className={cn(
-                'builder-header',
-                'flex flex-row justify-between items-center gap-10 h-fit ',
-              )}
-            >
-              <div className={cn('builder-andOrExcept', 'flex flex-row w-1/5 h-10 gap-2')}>
+          <>
+            {groupIndex !== 0 && (
+              <div className="flex flex-row w-1/2 h-10 gap-2">
                 <button
                   className={
-                    isAndActive[groupIndex]
-                      ? cn('builder-and', 'grow rounded-md border-2 bg-purple-400')
-                      : cn('builder-and', ' grow rounded-md border-2  border-purple-400 bg-white')
+                    isAndGroupActive[groupIndex]
+                      ? cn('builder-and', 'grow rounded-md border-2  border-purple-400 bg-white')
+                      : cn('builder-and', ' grow rounded-md border-2 bg-purple-400')
                   }
-                  onClick={() => setAndOperator(groupIndex)}
+                  onClick={() => setGroupAndOperator(groupIndex)}
                 >
                   And
                 </button>
                 <button
                   className={
-                    isOrActive[groupIndex]
-                      ? cn('builder-or', 'grow rounded-md  border-2 bg-purple-400')
-                      : cn(
-                          'builder-or',
-                          'grow rounded-md border-2 border-purple-400 bg-white hover:bg-sky-700',
-                        )
+                    isOrGroupActive[groupIndex]
+                      ? cn('builder-and', 'grow rounded-md border-2  border-purple-400 bg-white')
+                      : cn('builder-and', ' grow rounded-md border-2 bg-purple-400')
                   }
-                  onClick={() => {
-                    setOrOperator(groupIndex);
-                  }}
+                  onClick={() => setGroupOrOperator(groupIndex)}
                 >
                   Or
                 </button>
-                <button
-                  className={
-                    isExceptActive[groupIndex]
-                      ? cn('builder-except', 'grow rounded-md  border-2 bg-purple-400')
-                      : cn('builder-except', 'grow rounded-md border-2 border-purple-400 bg-white ')
-                  }
-                  onClick={() => {
-                    setExceptOperator(groupIndex);
-                  }}
-                >
-                  Except
-                </button>
               </div>
-              <div className="flex flex-row justify-start gap-1 w-1/6 h-10">
-                <button
-                  className={cn('builder-rule', 'grow rounded-md bg-purple-400 w-1/2')}
-                  onClick={() => generateRule(groupIndex)}
-                >
-                  + Rule
-                </button>
-                <button
-                  className={cn('builder-group', 'grow rounded-md bg-purple-400 w-1/2')}
-                  onClick={generateGroup}
-                >
-                  + Group
-                </button>
-              </div>
-            </div>
-            <div className={cn('builder-body', 'flex flex-col grow p-2')}>
-              {groups[groupIndex].rules.map(({}, ruleIndex) => (
-                <div key={ruleIndex} className={cn('builder-rule', 'flex items-center')}>
-                  <NewRule ruleIndex={ruleIndex} groupIndex={groupIndex} />
+            )}
+            <div
+              id={'group' + groupIndex}
+              className={cn(
+                'builder',
+                'flex flex-col gap-4 h-full border border-slate-200 rounded-lg p-2',
+              )}
+            >
+              <div
+                className={cn(
+                  'builder-header',
+                  'flex flex-row justify-between items-center gap-10 h-fit ',
+                )}
+              >
+                <div className={cn('builder-andOrExcept', 'flex flex-row w-1/5 h-10 gap-2')}>
                   <button
-                    className={cn(
-                      'builder-remove',
-                      'bg-white h-fit p-3 rounded-md border-2 border-rose-500 text-rose-500',
-                    )}
-                    onClick={() => removeRule(groupIndex, ruleIndex)}
+                    className={
+                      isAndActive[groupIndex]
+                        ? cn('builder-and', 'grow rounded-md border-2 bg-purple-400')
+                        : cn('builder-and', ' grow rounded-md border-2  border-purple-400 bg-white')
+                    }
+                    onClick={() => setAndOperator(groupIndex)}
                   >
-                    <FaRegTrashAlt />
+                    And
+                  </button>
+                  <button
+                    className={
+                      isOrActive[groupIndex]
+                        ? cn('builder-or', 'grow rounded-md  border-2 bg-purple-400')
+                        : cn(
+                            'builder-or',
+                            'grow rounded-md border-2 border-purple-400 bg-white hover:bg-sky-700',
+                          )
+                    }
+                    onClick={() => {
+                      setOrOperator(groupIndex);
+                    }}
+                  >
+                    Or
+                  </button>
+                  <button
+                    className={
+                      isExceptActive[groupIndex]
+                        ? cn('builder-except', 'grow rounded-md  border-2 bg-purple-400')
+                        : cn(
+                            'builder-except',
+                            'grow rounded-md border-2 border-purple-400 bg-white ',
+                          )
+                    }
+                    onClick={() => {
+                      setExceptOperator(groupIndex);
+                    }}
+                  >
+                    Except
                   </button>
                 </div>
-              ))}
+                <div className="flex flex-row justify-start gap-1 w-1/6 h-10">
+                  <button
+                    className={cn('builder-rule', 'grow rounded-md bg-purple-400 w-1/2')}
+                    onClick={() => generateRule(groupIndex)}
+                  >
+                    + Rule
+                  </button>
+                  <button
+                    className={cn('builder-group', 'grow rounded-md bg-purple-400 w-1/2')}
+                    onClick={generateGroup}
+                  >
+                    + Group
+                  </button>
+                </div>
+              </div>
+              <div className={cn('builder-body', 'flex flex-col grow p-2')}>
+                {groups[groupIndex].rules.map(({}, ruleIndex) => (
+                  <div key={ruleIndex} className={cn('builder-rule', 'flex items-center')}>
+                    <NewRule ruleIndex={ruleIndex} groupIndex={groupIndex} />
+                    <button
+                      className={cn(
+                        'builder-remove',
+                        'bg-white h-fit p-3 rounded-md border-2 border-rose-500 text-rose-500',
+                      )}
+                      onClick={() => removeRule(groupIndex, ruleIndex)}
+                    >
+                      <FaRegTrashAlt />
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          </>
         )}
       </>
     );
@@ -334,9 +369,11 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
     setAndActive([]);
     setOrActive([]);
     setExceptActive([]);
+    setAndGroupActive([]);
+    setOrGroupActive([]);
     setTimeout(() => {
       //fix to query cleaning
-      setQuery('');
+      setQuery(' ');
     }, 0);
   };
 
@@ -385,6 +422,37 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
     setOrActive(updatedOrStates);
   };
 
+  const setGroupAndOperator = (index: number) => {
+    setGroupOr(isAndGroup);
+    setGroupAnd(!isAndGroup);
+    const updatedAndStates = [...isAndGroupActive];
+    updatedAndStates[index] = !updatedAndStates[index];
+    setAndGroupActive(updatedAndStates);
+    const updatedOrStates = [...isOrGroupActive];
+    updatedOrStates[index] = false;
+    setOrGroupActive(updatedOrStates);
+    handleGroupOperatorChange(index - 1, 'AND');
+  };
+
+  const setGroupOrOperator = (index: number) => {
+    setGroupAnd(isOrGroup);
+    setGroupOr(!isOrGroup);
+    const updatedOrStates = [...isOrGroupActive];
+    updatedOrStates[index] = !updatedOrStates[index];
+    setOrGroupActive(updatedOrStates);
+    const updatedAndStates = [...isAndGroupActive];
+    updatedAndStates[index] = false;
+    setAndGroupActive(updatedAndStates);
+    handleGroupOperatorChange(index - 1, 'OR');
+  };
+
+  const handleGroupOperatorChange = (index: number, operator: string) => {
+    setGroupOperators((prev) => {
+      const updated = [...prev];
+      updated[index] = operator;
+      return updated;
+    });
+  };
   const formQuery = () => {
     let formedQuery: string = '';
     groups.forEach((group, groupIndex) => {
@@ -408,14 +476,16 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
         }
       });
       if (groupIndex < groups.length - 1) {
-        formedQuery += ' and ';
+        formedQuery +=
+          groupOperators[groupIndex] === '' ? ' And ' : ' ' + groupOperators[groupIndex] + ' ';
       }
     });
     setQuery(formedQuery);
   };
 
   useEffect(() => {
-    const queryString = query === '' || query.includes('undefined') ? '' : query;
+    if (!query) return;
+    const queryString = query === ' ' || query?.includes('undefined') ? '' : query;
     const fetchData = () => {
       const { entitysel } = ds as any;
       const dataSetName = entitysel?.getServerRef();
