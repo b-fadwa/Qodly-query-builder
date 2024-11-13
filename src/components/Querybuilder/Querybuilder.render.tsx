@@ -44,9 +44,15 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
 
   useEffect(() => {
     if (!ds) return;
+    const processedEntities = new Set(); // Keeps track of entities already processed
     //get ds props + do not display all relatedEntities
     const formattedProperties = Object.values(ds.dataclass.getAllAttributes())
-      .filter((item: any) => item.kind !== 'relatedEntities')
+      .filter(
+        (item: any) =>
+          item.kind !== 'relatedEntities' &&
+          item.kind !== 'calculated' &&
+          item.behavior !== 'relatedEntities',
+      )
       .map((item: any) => ({
         name: item.name,
         kind: item.kind,
@@ -55,16 +61,29 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
 
     const combinedProperties = [...formattedProperties];
     //manage nested entitiesRelations
-    const processAttributes = (attributes: any[], dataClassName: string) => {
+    const processAttributes = (attributes: any[], dataClassName: string, depth: number = 0) => {
+      if (depth >= 3) return; // Stop processing related entities at max depth
       attributes.forEach((item: any) => {
-        if (item.kind === 'relatedEntities') {
+        if (
+          (item.kind === 'relatedEntities' ||
+            (item.kind === 'calculated' && item.behavior === 'relatedEntities')) &&
+          depth < 3
+        ) {
+          // Only process related entities if not at max depth
           const dataType = item.type.replace('Selection', '');
+          const uniquePath = dataClassName + item.name;
+          // Check if this path is processed
+          if (processedEntities.has(uniquePath)) return; //base condition of recursion
+          // Mark path as processed
+          processedEntities.add(uniquePath);
+          // Recursively process attributes of the related entity
           const relatedEntityAttributes = Object.values(
             (ds.dataclass._private.datastore as any)[dataType].getAllAttributes(),
           );
           // Recursively process related entity attributes
-          processAttributes(relatedEntityAttributes, dataClassName + item.name + '.');
-        } else {
+          processAttributes(relatedEntityAttributes, dataClassName + item.name + '.', depth + 1);
+        } else if (item.kind === 'storage') {
+          // last shown attribute should be a scalar/storage kind
           combinedProperties.push({
             name: dataClassName + item.name,
             kind: item.kind,
@@ -73,16 +92,13 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
         }
       });
     };
-
-    Object.values(ds.dataclass.getAllAttributes()).forEach((item: any) => {
-      if (item.kind === 'relatedEntities') {
-        const dataType = item.type.replace('Selection', '');
-        const relatedEntityAttributes = Object.values(
-          (ds.dataclass._private.datastore as any)[dataType].getAllAttributes(),
-        );
-        processAttributes(relatedEntityAttributes, item.name + '.');
-      }
-    });
+    const topLevelAttributes = Object.values(ds.dataclass.getAllAttributes()).filter(
+      (item) =>
+        item.kind === 'relatedEntities' ||
+        (item.kind === 'calculated' && item.behavior === 'relatedEntities'),
+    );
+    processAttributes(topLevelAttributes, '');
+    // Set the processed properties and initialize other states
     setProperties(combinedProperties);
     setGroups([{ rules: [{}] }]);
     setSelectedLabels([[]]);
@@ -300,7 +316,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
               </div>
               <div className={cn('builder-body', 'flex flex-col grow p-2')}>
                 {groups[groupIndex].rules.map(({}, ruleIndex) => (
-                  <div key={ruleIndex} className={cn('builder-rule', 'flex items-center')}>
+                  <div key={ruleIndex} className={cn('builder-rule-line', 'flex items-center')}>
                     <NewRule ruleIndex={ruleIndex} groupIndex={groupIndex} />
                     <button
                       className={cn(
@@ -507,7 +523,9 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
 
   return (
     <div ref={connect} style={style} className={cn(className, classNames)}>
-      <div className={cn('builder', 'flex flex-col h-full gap-4 bg-gray-800 rounded-lg p-2')}>
+      <div
+        className={cn('builder', 'flex flex-col h-full gap-4 bg-gray-800 rounded-lg p-2 min-w-fit')}
+      >
         <div className={cn('builder-body', 'flex flex-col grow gap-2 p-2')}>
           {groups.map(({}, index) => (
             <div key={index}>
