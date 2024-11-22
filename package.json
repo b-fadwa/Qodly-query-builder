@@ -2,7 +2,7 @@
   "app_id": "qodly_a0802e670d18cb83778a",
   "name": "query-builder",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "author": {
     "name": "Qodly Team",
