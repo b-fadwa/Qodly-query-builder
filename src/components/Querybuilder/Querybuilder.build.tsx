@@ -12,7 +12,9 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
 
   return (
     <div ref={connect} style={style} className={cn(className, classNames)}>
-      <div className={cn('builder', 'flex flex-col h-full gap-4 bg-grey-800 p-2 rounded-lg')}>
+      <div
+        className={cn('builder', 'flex flex-col h-full gap-4 bg-grey-800 p-2 rounded-lg min-w-fit')}
+      >
         <div
           className={cn(
             'builder-header',
@@ -49,7 +51,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
           </div>
         </div>
         <div className={cn('builder-body', 'flex flex-col grow p-2')}>
-          <div className={cn('builder-rule', 'w-full h-fit flex flex-row p-2 gap-6')}>
+          <div className={cn('builder-rule-line', 'w-full h-fit flex flex-row p-2 gap-6')}>
             <input
               type="text"
               placeholder="Property"
