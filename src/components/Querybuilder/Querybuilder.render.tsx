@@ -57,6 +57,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
         name: item.name,
         kind: item.kind,
         type: item.type,
+        isDate: item.type === 'date', // check if it's of type date
       }));
 
     const combinedProperties = [...formattedProperties];
@@ -88,6 +89,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
             name: dataClassName + item.name,
             kind: item.kind,
             type: item.type,
+            isDate: item.type === 'date', // check if it's of type date
           });
         }
       });
@@ -157,6 +159,9 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
   }, [inputValues]);
 
   const NewRule = ({ ruleIndex, groupIndex }: { ruleIndex: number; groupIndex: number }) => {
+    const selectedProperty = properties.find(
+      (prop) => prop.name === selectedLabels[groupIndex][ruleIndex],
+    ); //get the selected property from the properties array
     return (
       <div className={cn('builder-new-rule', 'w-full h-fit flex flex-row p-2 gap-6')}>
         <select
@@ -189,21 +194,39 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
           <option value="&gt;=">&gt;=</option>
           <option value="begin">Starts with</option>
         </select>
-        <input
-          type="text"
-          placeholder="Value"
-          ref={(input) => {
-            if (!inputRefs.current[groupIndex]) {
-              inputRefs.current[groupIndex] = {};
-            }
-            inputRefs.current[groupIndex][ruleIndex] = input;
-          }}
-          className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
-          value={inputValues[groupIndex][ruleIndex]}
-          onChange={(v) => {
-            updateInput(v.target.value, ruleIndex, groupIndex);
-          }}
-        ></input>
+        {selectedProperty?.isDate ? (
+          <input
+            type="date"
+            placeholder="Value"
+            ref={(input) => {
+              if (!inputRefs.current[groupIndex]) {
+                inputRefs.current[groupIndex] = {};
+              }
+              inputRefs.current[groupIndex][ruleIndex] = input;
+            }}
+            className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
+            value={inputValues[groupIndex][ruleIndex]}
+            onChange={(v) => {
+              updateInput(v.target.value, ruleIndex, groupIndex);
+            }}
+          ></input>
+        ) : (
+          <input
+            type="text"
+            placeholder="Value"
+            ref={(input) => {
+              if (!inputRefs.current[groupIndex]) {
+                inputRefs.current[groupIndex] = {};
+              }
+              inputRefs.current[groupIndex][ruleIndex] = input;
+            }}
+            className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
+            value={inputValues[groupIndex][ruleIndex]}
+            onChange={(v) => {
+              updateInput(v.target.value, ruleIndex, groupIndex);
+            }}
+          ></input>
+        )}
       </div>
     );
   };
