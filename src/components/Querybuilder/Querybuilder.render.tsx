@@ -8,7 +8,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
   const { connect } = useRenderer();
   const [groups, setGroups] = useState([{ rules: [{}] }]);
   //query properties states
-  const [query, setQuery] = useState<string | null>(null);
+  const [builderQuery, setQuery] = useState<string | null>(null);
   const [properties, setProperties] = useState<any[]>([]);
   const labelSelect = useRef<HTMLSelectElement>(null);
   const operator = useRef<HTMLSelectElement>(null);
@@ -58,8 +58,11 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
         kind: item.kind,
         type: item.type,
         isDate: item.type === 'date', // check if it's of type date
+        isImage: item.type === 'image', //check if it's of type image
+        isString: item.type === 'string', //check if it's of type string
+        isNumber: item.type === 'long', //check if it's of type number
+        isBoolean: item.type === 'bool', //check if it's of type boolean
       }));
-
     const combinedProperties = [...formattedProperties];
     //manage nested entitiesRelations
     const processAttributes = (attributes: any[], dataClassName: string, depth: number = 0) => {
@@ -90,6 +93,10 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
             kind: item.kind,
             type: item.type,
             isDate: item.type === 'date', // check if it's of type date
+            isImage: item.type === 'image', //check if it's of type image
+            isString: item.type === 'string', //check if it's of type string
+            isNumber: item.type === 'long', //check if it's of type number
+            isBoolean: item.type === 'bool', //check if it's of type boolean
           });
         }
       });
@@ -172,29 +179,133 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
             updateLabel(v.target.value, ruleIndex, groupIndex);
           }}
         >
-          <option value="">Property</option>
+          <option value="" disabled selected>
+            Property
+          </option>
           {properties.map((attribute) => (
             <option value={attribute.name}>{attribute.name}</option>
           ))}
         </select>
-        <select
-          className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
-          ref={operator}
-          value={selectedOperators[groupIndex][ruleIndex]}
-          onChange={(v) => {
-            updateOperator(v.target.value, ruleIndex, groupIndex);
-          }}
-        >
-          <option value="">Operator</option>
-          <option value="=">=</option>
-          <option value="!=">!=</option>
-          <option value="&lt;">&lt;</option>
-          <option value="&gt;">&gt;</option>
-          <option value="&lt;=">&lt;=</option>
-          <option value="&gt;=">&gt;=</option>
-          <option value="begin">Starts with</option>
-        </select>
-        {selectedProperty?.isDate ? (
+        {/* {* handle each type operators */}
+        {/* no property selected */}
+        {!selectedProperty && (
+          <select className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}>
+            <option value="" disabled selected>
+              Operator
+            </option>
+          </select>
+        )}
+        {/* image case */}
+        {selectedProperty?.isImage && (
+          <select
+            className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
+            ref={operator}
+            value={selectedOperators[groupIndex][ruleIndex]}
+            onChange={(v) => {
+              updateOperator(v.target.value, ruleIndex, groupIndex);
+            }}
+          >
+            <option value="" disabled selected>
+              Operator
+            </option>
+            <option value="is null">Is null</option>
+            <option value="is not null">is not null</option>
+          </select>
+        )}
+        {/* string case */}
+        {selectedProperty?.isString && (
+          <select
+            className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
+            ref={operator}
+            value={selectedOperators[groupIndex][ruleIndex]}
+            onChange={(v) => {
+              updateOperator(v.target.value, ruleIndex, groupIndex);
+            }}
+          >
+            <option value="" disabled selected>
+              Operator
+            </option>
+            <option value="=">=</option>
+            <option value="!=">!=</option>
+            <option value="contains">contains</option>
+            <option value="begin">Starts with</option>
+            <option value="end">Ends with</option>
+            <option value="is null">is null</option>
+            <option value="is not null">is not null</option>
+          </select>
+        )}
+        {/* number case */}
+        {selectedProperty?.isNumber && (
+          <select
+            className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
+            ref={operator}
+            value={selectedOperators[groupIndex][ruleIndex]}
+            onChange={(v) => {
+              updateOperator(v.target.value, ruleIndex, groupIndex);
+            }}
+          >
+            <option value="" disabled selected>
+              Operator
+            </option>
+            <option value="=">=</option>
+            <option value="!=">!=</option>
+            <option value="&lt;">&lt;</option>
+            <option value="&gt;">&gt;</option>
+            <option value="&lt;=">&lt;=</option>
+            <option value="&gt;=">&gt;=</option>
+          </select>
+        )}
+        {/* date case */}
+        {selectedProperty?.isDate && (
+          <select
+            className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
+            ref={operator}
+            value={selectedOperators[groupIndex][ruleIndex]}
+            onChange={(v) => {
+              updateOperator(v.target.value, ruleIndex, groupIndex);
+            }}
+          >
+            <option value="" disabled selected>
+              Operator
+            </option>
+            <option value="=">=</option>
+            <option value="!=">!=</option>
+            <option value="&lt;">&lt;</option>
+            <option value="&gt;">&gt;</option>
+            <option value="between">between</option>
+            <option value="is null">is null</option>
+            <option value="is not null">is not null</option>
+          </select>
+        )}
+        {/* boolean case */}
+        {selectedProperty?.isBoolean && (
+          <select
+            className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
+            ref={operator}
+            value={selectedOperators[groupIndex][ruleIndex]}
+            onChange={(v) => {
+              updateOperator(v.target.value, ruleIndex, groupIndex);
+            }}
+          >
+            <option value="" disabled selected>
+              Operator
+            </option>
+            <option value="is true">is true</option>
+            <option value="is false">is false</option>
+            <option value="is null">is null</option>
+          </select>
+        )}
+        {/* handle each type inputs */}
+        {/* no property selected */}
+        {!selectedProperty && (
+          <input
+            type="text"
+            placeholder="Value"
+            className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
+          />
+        )}
+        {/* date input */}
+        {selectedProperty?.isDate && (
           <input
             type="date"
             placeholder="Value"
@@ -210,7 +321,27 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
               updateInput(v.target.value, ruleIndex, groupIndex);
             }}
           ></input>
-        ) : (
+        )}
+        {/* number input */}
+        {selectedProperty?.isNumber && (
+          <input
+            type="number"
+            placeholder="Value"
+            ref={(input) => {
+              if (!inputRefs.current[groupIndex]) {
+                inputRefs.current[groupIndex] = {};
+              }
+              inputRefs.current[groupIndex][ruleIndex] = input;
+            }}
+            className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
+            value={inputValues[groupIndex][ruleIndex]}
+            onChange={(v) => {
+              updateInput(v.target.value, ruleIndex, groupIndex);
+            }}
+          ></input>
+        )}
+        {/* string input */}
+        {selectedProperty?.isString && (
           <input
             type="text"
             placeholder="Value"
@@ -503,8 +634,20 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
     groups.forEach((group, groupIndex) => {
       const groupQueries = group.rules.map((_, ruleIndex) => ({
         label: selectedLabels[groupIndex][ruleIndex] || '',
-        operator: selectedOperators[groupIndex][ruleIndex] || '',
-        value: '"' + inputValues[groupIndex][ruleIndex] + '"',
+        operator:
+          selectedOperators[groupIndex][ruleIndex] == 'contains' ||
+          selectedOperators[groupIndex][ruleIndex] == 'end'
+            ? '='
+            : selectedOperators[groupIndex][ruleIndex] || '',
+        value:
+          selectedOperators[groupIndex][ruleIndex] === 'is null' ||
+          selectedOperators[groupIndex][ruleIndex] === 'is not null'
+            ? ''
+            : selectedOperators[groupIndex][ruleIndex] === 'contains'
+              ? '"@' + `${inputValues[groupIndex][ruleIndex]}@"`
+              : selectedOperators[groupIndex][ruleIndex] === 'end'
+                ? '"@' + inputValues[groupIndex][ruleIndex] + '"'
+                : '"' + inputValues[groupIndex][ruleIndex] + '"' || '',
       }));
       groupQueries.forEach((queryPart, queryIndex) => {
         formedQuery += queryPart.label + ' ' + queryPart.operator + ' ' + queryPart.value;
@@ -529,8 +672,9 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
   };
 
   useEffect(() => {
-    if (!query) return;
-    const queryString = query === ' ' || query?.includes('undefined') ? '' : query;
+    if (!builderQuery) return;
+    const queryString =
+      builderQuery === ' ' || builderQuery?.includes('undefined') ? '' : builderQuery;
     const fetchData = async () => {
       const { entitysel } = ds as any;
       const dataSetName = entitysel?.getServerRef();
@@ -542,7 +686,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
       ds.fireEvent('changed');
     };
     fetchData();
-  }, [query]);
+  }, [builderQuery]);
 
   return (
     <div ref={connect} style={style} className={cn(className, classNames)}>
