@@ -10,9 +10,14 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
   //query properties states
   const [builderQuery, setQuery] = useState<string | null>(null);
   const [properties, setProperties] = useState<any[]>([]);
+  const [allProperties, setAllProperties] = useState<any[]>([]); //related + storage
   const labelSelect = useRef<HTMLSelectElement>(null);
   const operator = useRef<HTMLSelectElement>(null);
+  //[][]for each rule ..
   const [selectedLabels, setSelectedLabels] = useState<string[][]>([[]]);
+  const [selectedRelatedLabels, setSelectedRelatedLabels] = useState<string[][]>([[]]);
+  const [relatedAttributes, setRelatedAttributes] = useState<any[][]>([]);
+  const [finalLabels, setFinalLabels] = useState<string[][]>([[]]);
   const [selectedOperators, setSelectedOperators] = useState<string[][]>([[]]);
   const [inputValues, setInputValues] = useState<string[][]>([[]]);
   // and , or , except states for each group rules
@@ -44,60 +49,80 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
 
   useEffect(() => {
     if (!ds) return;
-    const processedEntities = new Set(); // Keeps track of entities already processed
-    //get ds props + do not display all relatedEntities
-    const formattedProperties = Object.values(ds.dataclass.getAllAttributes())
-      .filter(
-        (item: any) =>
-          item.kind !== 'relatedEntities' &&
-          item.kind !== 'calculated' &&
-          item.behavior !== 'relatedEntities',
-      )
-      .map((item: any) => ({
-        name: item.name,
-        kind: item.kind,
-        type: item.type,
-        isDate: item.type === 'date', // check if it's of type date
-        isImage: item.type === 'image', //check if it's of type image
-        isString: item.type === 'string', //check if it's of type string
-        isNumber: item.type === 'long', //check if it's of type number
-        isBoolean: item.type === 'bool', //check if it's of type boolean
-      }));
-    const combinedProperties = [...formattedProperties];
-    //manage nested entitiesRelations
+    const processedEntities = new Set(); // Set to track processed entities and prevent duplicates
+    const formattedProperties = Object.values(ds.dataclass.getAllAttributes()).map((item: any) => ({
+      name: item.name,
+      kind: item.kind,
+      type: item.type,
+      isDate: item.type === 'date',
+      isImage: item.type === 'image',
+      isString: item.type === 'string',
+      isNumber: item.type === 'long',
+      isBoolean: item.type === 'bool',
+      isDuration: item.type === 'duration',
+      isRelated: item.kind === 'relatedEntities',
+    }));
+
+    const combinedProperties: any[] = [];
+
+    // Recursively process related entities and their attributes
     const processAttributes = (attributes: any[], dataClassName: string, depth: number = 0) => {
-      if (depth >= 3) return; // Stop processing related entities at max depth
+      if (depth >= 5) return; // Stop at max depth to prevent infinite recursion
       attributes.forEach((item: any) => {
+        const uniquePath = dataClassName + item.name;
         if (
           (item.kind === 'relatedEntities' ||
             (item.kind === 'calculated' && item.behavior === 'relatedEntities')) &&
-          depth < 3
+          depth < 5
         ) {
-          // Only process related entities if not at max depth
           const dataType = item.type.replace('Selection', '');
-          const uniquePath = dataClassName + item.name;
-          // Check if this path is processed
-          if (processedEntities.has(uniquePath)) return; //base condition of recursion
-          // Mark path as processed
+          if (processedEntities.has(uniquePath)) return;
           processedEntities.add(uniquePath);
-          // Recursively process attributes of the related entity
+          // Get related entity attributes
           const relatedEntityAttributes = Object.values(
             (ds.dataclass._private.datastore as any)[dataType].getAllAttributes(),
           );
-          // Recursively process related entity attributes
-          processAttributes(relatedEntityAttributes, dataClassName + item.name + '.', depth + 1);
-        } else if (item.kind === 'storage') {
-          // last shown attribute should be a scalar/storage kind
+          // Push the related entity itself
           combinedProperties.push({
-            name: dataClassName + item.name,
+            name: uniquePath,
             kind: item.kind,
             type: item.type,
-            isDate: item.type === 'date', // check if it's of type date
-            isImage: item.type === 'image', //check if it's of type image
-            isString: item.type === 'string', //check if it's of type string
-            isNumber: item.type === 'long', //check if it's of type number
-            isBoolean: item.type === 'bool', //check if it's of type boolean
+            isRelated: item.kind === 'relatedEntities',
           });
+          relatedEntityAttributes.forEach((attr: any) => {
+            if (attr.kind === 'storage' && !processedEntities.has(uniquePath + '.' + attr.name)) {
+              combinedProperties.push({
+                name: uniquePath + '.' + attr.name,
+                kind: attr.kind,
+                type: attr.type,
+                isDate: attr.type === 'date',
+                isImage: attr.type === 'image',
+                isString: attr.type === 'string',
+                isNumber: attr.type === 'long',
+                isBoolean: attr.type === 'bool',
+                isDuration: attr.type === 'duration',
+                isRelated: attr.kind === 'relatedEntities',
+              });
+              processedEntities.add(uniquePath + '.' + attr.name); // Mark this attribute as processed
+            }
+          });
+          // Recurse on the related entity attributes to find deeper related entities
+          processAttributes(relatedEntityAttributes, uniquePath + '.', depth + 1);
+        } else if (item.kind === 'storage' && !processedEntities.has(uniquePath)) {
+          // Handle non-related entities (storage)
+          combinedProperties.push({
+            name: uniquePath,
+            kind: item.kind,
+            type: item.type,
+            isDate: item.type === 'date',
+            isImage: item.type === 'image',
+            isString: item.type === 'string',
+            isNumber: item.type === 'long',
+            isBoolean: item.type === 'bool',
+            isDuration: item.type === 'duration',
+            isRelated: item.kind === 'relatedEntities',
+          });
+          processedEntities.add(uniquePath);
         }
       });
     };
@@ -107,10 +132,12 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
         (item.kind === 'calculated' && item.behavior === 'relatedEntities'),
     );
     processAttributes(topLevelAttributes, '');
-    // Set the processed properties and initialize other states
-    setProperties(combinedProperties);
+    setProperties(formattedProperties);
+    setAllProperties([...combinedProperties, ...formattedProperties]); // add the processed properties too
     setGroups([{ rules: [{}] }]);
     setSelectedLabels([[]]);
+    setSelectedRelatedLabels([[]]);
+    setFinalLabels([[]]);
     setSelectedOperators([[]]);
     setInputValues([[]]);
   }, []);
@@ -141,6 +168,25 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
     const updatedLabels = [...selectedLabels];
     updatedLabels[groupIndex][ruleIndex] = v;
     setSelectedLabels(updatedLabels);
+    updateFinalLabels(updatedLabels, selectedRelatedLabels);
+  };
+
+  const updateRelatedLabel = (v: string, ruleIndex: number, groupIndex: number) => {
+    const updatedRelatedLabels = [...selectedRelatedLabels];
+    updatedRelatedLabels[groupIndex][ruleIndex] = v;
+    setSelectedRelatedLabels(updatedRelatedLabels);
+    updateFinalLabels(updatedRelatedLabels, selectedRelatedLabels);
+  };
+
+  //final labels(storage and related by rule)
+  const updateFinalLabels = (updatedLabels: string[][], updatedRelatedLabels: string[][]) => {
+    const updatedFinalLabels = updatedLabels.map((groupLabels, groupIndex) => {
+      return groupLabels.map((label, ruleIndex) => {
+        const relatedLabel = updatedRelatedLabels[groupIndex]?.[ruleIndex];
+        return relatedLabel ? relatedLabel : label;
+      });
+    });
+    setFinalLabels(updatedFinalLabels);
   };
 
   const updateOperator = (v: string, ruleIndex: number, groupIndex: number) => {
@@ -166,26 +212,86 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
   }, [inputValues]);
 
   const NewRule = ({ ruleIndex, groupIndex }: { ruleIndex: number; groupIndex: number }) => {
-    const selectedProperty = properties.find(
-      (prop) => prop.name === selectedLabels[groupIndex][ruleIndex],
-    ); //get the selected property from the properties array
+    const selectedProperty: any = selectedRelatedLabels[groupIndex][ruleIndex]
+      ? allProperties.find((prop) => prop.name === selectedRelatedLabels[groupIndex][ruleIndex])
+      : allProperties.find((prop) => prop.name === selectedLabels[groupIndex][ruleIndex]);
+
+    //get related attributes of the selected related attribute..
+    const handlePropertyChange = (v: any, ruleIndex: number, groupIndex: number) => {
+      const selectedAttribute = properties.find((attribute) => attribute.name === v.target.value);
+      if (selectedAttribute && selectedAttribute.isRelated) {
+        const relatedEntityAttributes = allProperties
+          .filter(
+            (attr) =>
+              attr.name.startsWith(selectedAttribute.name + '.') &&
+              attr.name !== selectedAttribute.name,
+          )
+          .map((attr) => ({
+            name: attr.name,
+            type: attr.type,
+            kind: attr.kind,
+            isRelated: attr.isRelated,
+            isString: attr.isString,
+            isNumber: attr.isNumber,
+            isDate: attr.isDate,
+            isBoolean: attr.isBoolean,
+          }));
+
+        setRelatedAttributes((prev) => {
+          const updated = [...prev];
+          updated[groupIndex] = updated[groupIndex] || [];
+          updated[groupIndex][ruleIndex] = relatedEntityAttributes;
+          return updated;
+        });
+      }
+    };
+
     return (
       <div className={cn('builder-new-rule', 'w-full h-fit flex flex-row p-2 gap-6')}>
+        {/* first select will all the attributes without recursion ..*/}
         <select
-          className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
+          className="builder-input bg-red-500 p-2 h-10 rounded-md grow"
           ref={labelSelect}
           value={selectedLabels[groupIndex][ruleIndex]}
           onChange={(v) => {
             updateLabel(v.target.value, ruleIndex, groupIndex);
+            handlePropertyChange(v, ruleIndex, groupIndex);
           }}
         >
           <option value="" disabled selected>
-            Property
+            Select a property
           </option>
           {properties.map((attribute) => (
             <option value={attribute.name}>{attribute.name}</option>
           ))}
         </select>
+        {/* get all properties of the related attribute */}
+        {(selectedProperty?.isRelated || selectedProperty?.name?.includes('.')) && (
+          <select
+            className="builder-input bg-blue-400 p-2 h-10 rounded-md grow"
+            ref={labelSelect}
+            value={selectedRelatedLabels[groupIndex][ruleIndex]}
+            onChange={(v) => {
+              updateRelatedLabel(v.target.value, ruleIndex, groupIndex);
+              handlePropertyChange(v, ruleIndex, groupIndex);
+            }}
+          >
+            <option value="" disabled selected>
+              Select a related property
+            </option>
+            {(relatedAttributes[groupIndex]?.[ruleIndex]).map((attr: any) => {
+              //removing the prefix process
+              const baseName = attr.name.split('.').shift()
+                ? attr.name.replace(new RegExp(`^${attr.name.split('.').shift()}\.`), '')
+                : attr.name;
+              return (
+                <option key={attr.name} value={attr.name}>
+                  {baseName}
+                </option>
+              );
+            })}
+          </select>
+        )}
         {/* {* handle each type operators */}
         {/* no property selected */}
         {!selectedProperty && (
@@ -256,7 +362,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
           </select>
         )}
         {/* date case */}
-        {selectedProperty?.isDate && (
+        {(selectedProperty?.isDate || selectedProperty?.isDuration) && (
           <select
             className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
             ref={operator}
@@ -297,67 +403,117 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
         )}
         {/* handle each type inputs */}
         {/* no property selected */}
-        {!selectedProperty && (
-          <input
-            type="text"
-            placeholder="Value"
-            className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
-          />
-        )}
+        {!selectedProperty &&
+          selectedOperators[groupIndex][ruleIndex] !== 'is null' &&
+          selectedOperators[groupIndex][ruleIndex] !== 'is not null' && (
+            <input
+              type="text"
+              placeholder="Value"
+              className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
+            />
+          )}
         {/* date input */}
-        {selectedProperty?.isDate && (
-          <input
-            type="date"
-            placeholder="Value"
-            ref={(input) => {
-              if (!inputRefs.current[groupIndex]) {
-                inputRefs.current[groupIndex] = {};
-              }
-              inputRefs.current[groupIndex][ruleIndex] = input;
-            }}
-            className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
-            value={inputValues[groupIndex][ruleIndex]}
-            onChange={(v) => {
-              updateInput(v.target.value, ruleIndex, groupIndex);
-            }}
-          ></input>
-        )}
+        {selectedProperty?.isDate &&
+          selectedOperators[groupIndex][ruleIndex] !== 'is null' &&
+          selectedOperators[groupIndex][ruleIndex] !== 'is not null' && (
+            <>
+              <input
+                type="date"
+                placeholder="Value"
+                ref={(input) => {
+                  if (!inputRefs.current[groupIndex]) {
+                    inputRefs.current[groupIndex] = {};
+                  }
+                  inputRefs.current[groupIndex][ruleIndex] = input;
+                }}
+                className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
+                value={inputValues[groupIndex][ruleIndex]}
+                onChange={(v) => {
+                  updateInput(v.target.value, ruleIndex, groupIndex);
+                }}
+              ></input>
+              {selectedOperators[groupIndex][ruleIndex] === 'between' && (
+                <input
+                  type="date"
+                  placeholder="Value"
+                  ref={(input) => {
+                    //to update
+                    if (!inputRefs.current[groupIndex]) {
+                      inputRefs.current[groupIndex] = {};
+                    }
+                    inputRefs.current[groupIndex][ruleIndex] = input;
+                  }}
+                  className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
+                  value={inputValues[groupIndex][ruleIndex]?.[1] || ''}
+                  onChange={(v) => {
+                    //to check
+                    console.log(v.target.value);
+                  }}
+                />
+              )}
+            </>
+          )}
+        {/* duration input */}
+        {selectedProperty?.isDuration &&
+          selectedOperators[groupIndex][ruleIndex] !== 'is null' &&
+          selectedOperators[groupIndex][ruleIndex] !== 'is not null' && (
+            <input
+              type="time"
+              step="60"
+              placeholder="Value"
+              ref={(input) => {
+                if (!inputRefs.current[groupIndex]) {
+                  inputRefs.current[groupIndex] = {};
+                }
+                inputRefs.current[groupIndex][ruleIndex] = input;
+              }}
+              className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
+              value={inputValues[groupIndex][ruleIndex]}
+              onChange={(v) => {
+                updateInput(v.target.value, ruleIndex, groupIndex);
+              }}
+            ></input>
+          )}
         {/* number input */}
-        {selectedProperty?.isNumber && (
-          <input
-            type="number"
-            placeholder="Value"
-            ref={(input) => {
-              if (!inputRefs.current[groupIndex]) {
-                inputRefs.current[groupIndex] = {};
-              }
-              inputRefs.current[groupIndex][ruleIndex] = input;
-            }}
-            className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
-            value={inputValues[groupIndex][ruleIndex]}
-            onChange={(v) => {
-              updateInput(v.target.value, ruleIndex, groupIndex);
-            }}
-          ></input>
-        )}
+        {selectedProperty?.isNumber &&
+          selectedOperators[groupIndex][ruleIndex] !== 'is null' &&
+          selectedOperators[groupIndex][ruleIndex] !== 'is not null' && (
+            <input
+              type="number"
+              placeholder="Value"
+              ref={(input) => {
+                if (!inputRefs.current[groupIndex]) {
+                  inputRefs.current[groupIndex] = {};
+                }
+                inputRefs.current[groupIndex][ruleIndex] = input;
+              }}
+              className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
+              value={inputValues[groupIndex][ruleIndex]}
+              onChange={(v) => {
+                updateInput(v.target.value, ruleIndex, groupIndex);
+              }}
+            ></input>
+          )}
         {/* string input */}
-        {selectedProperty?.isString && (
-          <input
-            type="text"
-            placeholder="Value"
-            ref={(input) => {
-              if (!inputRefs.current[groupIndex]) {
-                inputRefs.current[groupIndex] = {};
-              }
-              inputRefs.current[groupIndex][ruleIndex] = input;
-            }}
-            className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
-            value={inputValues[groupIndex][ruleIndex]}
-            onChange={(v) => {
-              updateInput(v.target.value, ruleIndex, groupIndex);
-            }}
-          ></input>
-        )}
+        {selectedProperty?.isString &&
+          selectedOperators[groupIndex][ruleIndex] !== 'is null' &&
+          selectedOperators[groupIndex][ruleIndex] !== 'is not null' && (
+            <input
+              type="text"
+              placeholder="Value"
+              ref={(input) => {
+                if (!inputRefs.current[groupIndex]) {
+                  inputRefs.current[groupIndex] = {};
+                }
+                inputRefs.current[groupIndex][ruleIndex] = input;
+              }}
+              className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
+              value={inputValues[groupIndex][ruleIndex]}
+              onChange={(v) => {
+                updateInput(v.target.value, ruleIndex, groupIndex);
+              }}
+            ></input>
+          )}
       </div>
     );
   };
@@ -538,6 +694,8 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
     setGroups([{ rules: [{}] }]);
     //+clear datasources binded to inputs...
     setSelectedLabels([[]]);
+    setSelectedRelatedLabels([[]]);
+    setFinalLabels([[]]);
     setSelectedOperators([[]]);
     setInputValues([[]]);
     setAnd(false);
@@ -633,7 +791,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
     let formedQuery: string = '';
     groups.forEach((group, groupIndex) => {
       const groupQueries = group.rules.map((_, ruleIndex) => ({
-        label: selectedLabels[groupIndex][ruleIndex] || '',
+        label: finalLabels[groupIndex][ruleIndex] || '',
         operator:
           selectedOperators[groupIndex][ruleIndex] == 'contains' ||
           selectedOperators[groupIndex][ruleIndex] == 'end'
