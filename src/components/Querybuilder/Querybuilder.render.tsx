@@ -3,7 +3,7 @@ import cn from 'classnames';
 import { FC, useEffect, useRef, useState } from 'react';
 
 import { IQuerybuilderProps } from './Querybuilder.config';
-import { FaRegTrashAlt } from 'react-icons/fa';
+import NewGroup from './parts/NewGroup';
 const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [] }) => {
   const { connect } = useRenderer();
   const [groups, setGroups] = useState([{ rules: [{}] }]);
@@ -172,10 +172,15 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
   };
 
   const updateRelatedLabel = (v: string, ruleIndex: number, groupIndex: number) => {
-    const updatedRelatedLabels = [...selectedRelatedLabels];
-    updatedRelatedLabels[groupIndex][ruleIndex] = v;
-    setSelectedRelatedLabels(updatedRelatedLabels);
-    updateFinalLabels(updatedRelatedLabels, selectedRelatedLabels);
+    setSelectedRelatedLabels((prev) => {
+      const updatedRelatedLabels = [...prev];
+      if (!updatedRelatedLabels[groupIndex]) {
+        updatedRelatedLabels[groupIndex] = [];
+      }
+      updatedRelatedLabels[groupIndex][ruleIndex] = v;
+      updateFinalLabels(updatedRelatedLabels, selectedRelatedLabels);
+      return updatedRelatedLabels;
+    });
   };
 
   //final labels(storage and related by rule)
@@ -210,442 +215,6 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
       if (input) input.focus();
     }
   }, [inputValues]);
-
-  const NewRule = ({ ruleIndex, groupIndex }: { ruleIndex: number; groupIndex: number }) => {
-    const selectedProperty: any = selectedRelatedLabels[groupIndex][ruleIndex]
-      ? allProperties.find((prop) => prop.name === selectedRelatedLabels[groupIndex][ruleIndex])
-      : allProperties.find((prop) => prop.name === selectedLabels[groupIndex][ruleIndex]);
-
-    //get related attributes of the selected related attribute..
-    const handlePropertyChange = (v: any, ruleIndex: number, groupIndex: number) => {
-      const selectedAttribute = properties.find((attribute) => attribute.name === v.target.value);
-      if (selectedAttribute && selectedAttribute.isRelated) {
-        const relatedEntityAttributes = allProperties
-          .filter(
-            (attr) =>
-              attr.name.startsWith(selectedAttribute.name + '.') &&
-              attr.name !== selectedAttribute.name,
-          )
-          .map((attr) => ({
-            name: attr.name,
-            type: attr.type,
-            kind: attr.kind,
-            isRelated: attr.isRelated,
-            isString: attr.isString,
-            isNumber: attr.isNumber,
-            isDate: attr.isDate,
-            isBoolean: attr.isBoolean,
-          }));
-
-        setRelatedAttributes((prev) => {
-          const updated = [...prev];
-          updated[groupIndex] = updated[groupIndex] || [];
-          updated[groupIndex][ruleIndex] = relatedEntityAttributes;
-          return updated;
-        });
-      }
-    };
-
-    return (
-      <div className={cn('builder-new-rule', 'w-full h-fit flex flex-row p-2 gap-6')}>
-        {/* first select will all the attributes without recursion ..*/}
-        <select
-          className="builder-input bg-red-500 p-2 h-10 rounded-md grow"
-          ref={labelSelect}
-          value={selectedLabels[groupIndex][ruleIndex]}
-          onChange={(v) => {
-            updateLabel(v.target.value, ruleIndex, groupIndex);
-            handlePropertyChange(v, ruleIndex, groupIndex);
-          }}
-        >
-          <option value="" disabled selected>
-            Select a property
-          </option>
-          {properties.map((attribute) => (
-            <option value={attribute.name}>{attribute.name}</option>
-          ))}
-        </select>
-        {/* get all properties of the related attribute */}
-        {(selectedProperty?.isRelated || selectedProperty?.name?.includes('.')) && (
-          <select
-            className="builder-input bg-blue-400 p-2 h-10 rounded-md grow"
-            ref={labelSelect}
-            value={selectedRelatedLabels[groupIndex][ruleIndex]}
-            onChange={(v) => {
-              updateRelatedLabel(v.target.value, ruleIndex, groupIndex);
-              handlePropertyChange(v, ruleIndex, groupIndex);
-            }}
-          >
-            <option value="" disabled selected>
-              Select a related property
-            </option>
-            {(relatedAttributes[groupIndex]?.[ruleIndex]).map((attr: any) => {
-              //removing the prefix process
-              const baseName = attr.name.split('.').shift()
-                ? attr.name.replace(new RegExp(`^${attr.name.split('.').shift()}\.`), '')
-                : attr.name;
-              return (
-                <option key={attr.name} value={attr.name}>
-                  {baseName}
-                </option>
-              );
-            })}
-          </select>
-        )}
-        {/* {* handle each type operators */}
-        {/* no property selected */}
-        {!selectedProperty && (
-          <select className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}>
-            <option value="" disabled selected>
-              Operator
-            </option>
-          </select>
-        )}
-        {/* image case */}
-        {selectedProperty?.isImage && (
-          <select
-            className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
-            ref={operator}
-            value={selectedOperators[groupIndex][ruleIndex]}
-            onChange={(v) => {
-              updateOperator(v.target.value, ruleIndex, groupIndex);
-            }}
-          >
-            <option value="" disabled selected>
-              Operator
-            </option>
-            <option value="is null">Is null</option>
-            <option value="is not null">is not null</option>
-          </select>
-        )}
-        {/* string case */}
-        {selectedProperty?.isString && (
-          <select
-            className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
-            ref={operator}
-            value={selectedOperators[groupIndex][ruleIndex]}
-            onChange={(v) => {
-              updateOperator(v.target.value, ruleIndex, groupIndex);
-            }}
-          >
-            <option value="" disabled selected>
-              Operator
-            </option>
-            <option value="=">=</option>
-            <option value="!=">!=</option>
-            <option value="contains">contains</option>
-            <option value="begin">Starts with</option>
-            <option value="end">Ends with</option>
-            <option value="is null">is null</option>
-            <option value="is not null">is not null</option>
-          </select>
-        )}
-        {/* number case */}
-        {selectedProperty?.isNumber && (
-          <select
-            className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
-            ref={operator}
-            value={selectedOperators[groupIndex][ruleIndex]}
-            onChange={(v) => {
-              updateOperator(v.target.value, ruleIndex, groupIndex);
-            }}
-          >
-            <option value="" disabled selected>
-              Operator
-            </option>
-            <option value="=">=</option>
-            <option value="!=">!=</option>
-            <option value="&lt;">&lt;</option>
-            <option value="&gt;">&gt;</option>
-            <option value="&lt;=">&lt;=</option>
-            <option value="&gt;=">&gt;=</option>
-          </select>
-        )}
-        {/* date case */}
-        {(selectedProperty?.isDate || selectedProperty?.isDuration) && (
-          <select
-            className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
-            ref={operator}
-            value={selectedOperators[groupIndex][ruleIndex]}
-            onChange={(v) => {
-              updateOperator(v.target.value, ruleIndex, groupIndex);
-            }}
-          >
-            <option value="" disabled selected>
-              Operator
-            </option>
-            <option value="=">=</option>
-            <option value="!=">!=</option>
-            <option value="&lt;">&lt;</option>
-            <option value="&gt;">&gt;</option>
-            <option value="between">between</option>
-            <option value="is null">is null</option>
-            <option value="is not null">is not null</option>
-          </select>
-        )}
-        {/* boolean case */}
-        {selectedProperty?.isBoolean && (
-          <select
-            className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
-            ref={operator}
-            value={selectedOperators[groupIndex][ruleIndex]}
-            onChange={(v) => {
-              updateOperator(v.target.value, ruleIndex, groupIndex);
-            }}
-          >
-            <option value="" disabled selected>
-              Operator
-            </option>
-            <option value="is true">is true</option>
-            <option value="is false">is false</option>
-            <option value="is null">is null</option>
-          </select>
-        )}
-        {/* handle each type inputs */}
-        {/* no property selected */}
-        {!selectedProperty &&
-          selectedOperators[groupIndex][ruleIndex] !== 'is null' &&
-          selectedOperators[groupIndex][ruleIndex] !== 'is not null' && (
-            <input
-              type="text"
-              placeholder="Value"
-              className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
-            />
-          )}
-        {/* date input */}
-        {selectedProperty?.isDate &&
-          selectedOperators[groupIndex][ruleIndex] !== 'is null' &&
-          selectedOperators[groupIndex][ruleIndex] !== 'is not null' && (
-            <>
-              <input
-                type="date"
-                placeholder="Value"
-                ref={(input) => {
-                  if (!inputRefs.current[groupIndex]) {
-                    inputRefs.current[groupIndex] = {};
-                  }
-                  inputRefs.current[groupIndex][ruleIndex] = input;
-                }}
-                className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
-                value={inputValues[groupIndex][ruleIndex]}
-                onChange={(v) => {
-                  updateInput(v.target.value, ruleIndex, groupIndex);
-                }}
-              ></input>
-              {selectedOperators[groupIndex][ruleIndex] === 'between' && (
-                <input
-                  type="date"
-                  placeholder="Value"
-                  ref={(input) => {
-                    //to update
-                    if (!inputRefs.current[groupIndex]) {
-                      inputRefs.current[groupIndex] = {};
-                    }
-                    inputRefs.current[groupIndex][ruleIndex] = input;
-                  }}
-                  className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
-                  value={inputValues[groupIndex][ruleIndex]?.[1] || ''}
-                  onChange={(v) => {
-                    //to check
-                    console.log(v.target.value);
-                  }}
-                />
-              )}
-            </>
-          )}
-        {/* duration input */}
-        {selectedProperty?.isDuration &&
-          selectedOperators[groupIndex][ruleIndex] !== 'is null' &&
-          selectedOperators[groupIndex][ruleIndex] !== 'is not null' && (
-            <input
-              type="time"
-              step="60"
-              placeholder="Value"
-              ref={(input) => {
-                if (!inputRefs.current[groupIndex]) {
-                  inputRefs.current[groupIndex] = {};
-                }
-                inputRefs.current[groupIndex][ruleIndex] = input;
-              }}
-              className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
-              value={inputValues[groupIndex][ruleIndex]}
-              onChange={(v) => {
-                updateInput(v.target.value, ruleIndex, groupIndex);
-              }}
-            ></input>
-          )}
-        {/* number input */}
-        {selectedProperty?.isNumber &&
-          selectedOperators[groupIndex][ruleIndex] !== 'is null' &&
-          selectedOperators[groupIndex][ruleIndex] !== 'is not null' && (
-            <input
-              type="number"
-              placeholder="Value"
-              ref={(input) => {
-                if (!inputRefs.current[groupIndex]) {
-                  inputRefs.current[groupIndex] = {};
-                }
-                inputRefs.current[groupIndex][ruleIndex] = input;
-              }}
-              className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
-              value={inputValues[groupIndex][ruleIndex]}
-              onChange={(v) => {
-                updateInput(v.target.value, ruleIndex, groupIndex);
-              }}
-            ></input>
-          )}
-        {/* string input */}
-        {selectedProperty?.isString &&
-          selectedOperators[groupIndex][ruleIndex] !== 'is null' &&
-          selectedOperators[groupIndex][ruleIndex] !== 'is not null' && (
-            <input
-              type="text"
-              placeholder="Value"
-              ref={(input) => {
-                if (!inputRefs.current[groupIndex]) {
-                  inputRefs.current[groupIndex] = {};
-                }
-                inputRefs.current[groupIndex][ruleIndex] = input;
-              }}
-              className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
-              value={inputValues[groupIndex][ruleIndex]}
-              onChange={(v) => {
-                updateInput(v.target.value, ruleIndex, groupIndex);
-              }}
-            ></input>
-          )}
-      </div>
-    );
-  };
-
-  const NewGroup = ({ groupIndex }: { groupIndex: number }) => {
-    //extract groupIndex from the newGroup
-    return (
-      <>
-        {groups[groupIndex].rules.length > 0 && (
-          <div className="builder-group-container flex flex-col gap-1">
-            {groupIndex !== 0 && (
-              <div className="builder-group-operators flex flex-row w-1/3 h-10 gap-2">
-                <button
-                  className={
-                    isAndGroupActive[groupIndex]
-                      ? cn(
-                          'builder-and-group',
-                          'grow rounded-md border-2  border-purple-400 bg-white',
-                        )
-                      : cn('builder-and-group', ' grow rounded-md border-2 bg-purple-400')
-                  }
-                  onClick={() => setGroupAndOperator(groupIndex)}
-                >
-                  And
-                </button>
-                <button
-                  className={
-                    isOrGroupActive[groupIndex]
-                      ? cn(
-                          'builder-or-group',
-                          'grow rounded-md border-2  border-purple-400 bg-white',
-                        )
-                      : cn('builder-or-group', ' grow rounded-md border-2 bg-purple-400')
-                  }
-                  onClick={() => setGroupOrOperator(groupIndex)}
-                >
-                  Or
-                </button>
-              </div>
-            )}
-            <div
-              id={'group' + groupIndex}
-              className={cn(
-                'builder',
-                'flex flex-col gap-4 h-full border border-slate-200 rounded-lg p-2',
-              )}
-            >
-              <div
-                className={cn(
-                  'builder-header',
-                  'flex flex-row justify-between items-center gap-10 h-fit ',
-                )}
-              >
-                <div className={cn('builder-andOrExcept', 'flex flex-row w-1/5 h-10 gap-2')}>
-                  <button
-                    className={
-                      isAndActive[groupIndex]
-                        ? cn('builder-and', 'grow rounded-md border-2 bg-purple-400')
-                        : cn('builder-and', ' grow rounded-md border-2  border-purple-400 bg-white')
-                    }
-                    onClick={() => setAndOperator(groupIndex)}
-                  >
-                    And
-                  </button>
-                  <button
-                    className={
-                      isOrActive[groupIndex]
-                        ? cn('builder-or', 'grow rounded-md  border-2 bg-purple-400')
-                        : cn(
-                            'builder-or',
-                            'grow rounded-md border-2 border-purple-400 bg-white hover:bg-sky-700',
-                          )
-                    }
-                    onClick={() => {
-                      setOrOperator(groupIndex);
-                    }}
-                  >
-                    Or
-                  </button>
-                  <button
-                    className={
-                      isExceptActive[groupIndex]
-                        ? cn('builder-except', 'grow rounded-md  border-2 bg-purple-400')
-                        : cn(
-                            'builder-except',
-                            'grow rounded-md border-2 border-purple-400 bg-white ',
-                          )
-                    }
-                    onClick={() => {
-                      setExceptOperator(groupIndex);
-                    }}
-                  >
-                    Except
-                  </button>
-                </div>
-                <div className="flex flex-row justify-start gap-1 w-1/6 h-10">
-                  <button
-                    className={cn('builder-rule', 'grow rounded-md bg-purple-400 w-1/2')}
-                    onClick={() => generateRule(groupIndex)}
-                  >
-                    + Rule
-                  </button>
-                  <button
-                    className={cn('builder-group', 'grow rounded-md bg-purple-400 w-1/2')}
-                    onClick={generateGroup}
-                  >
-                    + Group
-                  </button>
-                </div>
-              </div>
-              <div className={cn('builder-body', 'flex flex-col grow p-2')}>
-                {groups[groupIndex].rules.map(({}, ruleIndex) => (
-                  <div key={ruleIndex} className={cn('builder-rule-line', 'flex items-center')}>
-                    <NewRule ruleIndex={ruleIndex} groupIndex={groupIndex} />
-                    <button
-                      className={cn(
-                        'builder-remove',
-                        'bg-white h-fit p-3 rounded-md border-2 border-rose-500 text-rose-500',
-                      )}
-                      onClick={() => removeRule(groupIndex, ruleIndex)}
-                    >
-                      <FaRegTrashAlt />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-      </>
-    );
-  };
 
   const removeRule = (groupIndex: number, ruleIndex: number) => {
     if (groupIndex == 0 && ruleIndex == 0) {
@@ -787,6 +356,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
       return updated;
     });
   };
+
   const formQuery = () => {
     let formedQuery: string = '';
     groups.forEach((group, groupIndex) => {
@@ -854,7 +424,38 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
         <div className={cn('builder-body', 'flex flex-col grow gap-2 p-2')}>
           {groups.map(({}, index) => (
             <div key={index}>
-              <NewGroup groupIndex={index} />
+              <NewGroup
+                groups={groups}
+                index={index}
+                isAndGroupActive={isAndGroupActive}
+                setGroupAndOperator={setGroupAndOperator}
+                isOrGroupActive={isOrGroupActive}
+                setGroupOrOperator={setGroupOrOperator}
+                isAndActive={isAndActive}
+                setAndOperator={setAndOperator}
+                isOrActive={isOrActive}
+                setOrOperator={setOrOperator}
+                isExceptActive={isExceptActive}
+                setExceptOperator={setExceptOperator}
+                generateRule={generateRule}
+                generateGroup={generateGroup}
+                removeRule={removeRule}
+                labelSelect={labelSelect}
+                operator={operator}
+                updateLabel={updateLabel}
+                properties={properties}
+                selectedOperators={selectedOperators}
+                updateOperator={updateOperator}
+                inputRefs={inputRefs}
+                inputValues={inputValues}
+                updateInput={updateInput}
+                allProperties={allProperties}
+                selectedRelatedLabels={selectedRelatedLabels}
+                selectedLabels={selectedLabels}
+                setRelatedAttributes={setRelatedAttributes}
+                updateRelatedLabel={updateRelatedLabel}
+                relatedAttributes={relatedAttributes}
+              />
             </div>
           ))}
         </div>
