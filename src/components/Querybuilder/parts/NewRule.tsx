@@ -259,30 +259,42 @@ const NewRule: FC<IQueryRuleProps> = ({
                 if (!inputRefs.current[groupIndex]) {
                   inputRefs.current[groupIndex] = {};
                 }
-                inputRefs.current[groupIndex][ruleIndex] = input;
+                if (!inputRefs.current[groupIndex][ruleIndex]) {
+                  inputRefs.current[groupIndex][ruleIndex] = [];
+                }
+                inputRefs.current[groupIndex][ruleIndex][0] = input; // Store first date input
               }}
-              className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
-              value={inputValues[groupIndex][ruleIndex]}
+              className="builder-input bg-white p-2 h-10 rounded-md grow"
+              value={inputValues[groupIndex][ruleIndex]?.[0] || ''}
               onChange={(v) => {
-                updateInput(v.target.value, ruleIndex, groupIndex);
+                updateInput(
+                  [v.target.value, inputValues[groupIndex][ruleIndex]?.[1] || ''],
+                  ruleIndex,
+                  groupIndex,
+                );
               }}
-            ></input>
+            />
             {selectedOperators[groupIndex][ruleIndex] === 'between' && (
               <input
                 type="date"
                 placeholder="Value"
                 ref={(input) => {
-                  //to update
                   if (!inputRefs.current[groupIndex]) {
                     inputRefs.current[groupIndex] = {};
                   }
-                  inputRefs.current[groupIndex][ruleIndex] = input;
+                  if (!inputRefs.current[groupIndex][ruleIndex]) {
+                    inputRefs.current[groupIndex][ruleIndex] = [];
+                  }
+                  inputRefs.current[groupIndex][ruleIndex][1] = input; // Store second date input
                 }}
-                className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
+                className="builder-input bg-white p-2 h-10 rounded-md grow"
                 value={inputValues[groupIndex][ruleIndex]?.[1] || ''}
                 onChange={(v) => {
-                  //to check
-                  console.log(v.target.value);
+                  updateInput(
+                    [inputValues[groupIndex][ruleIndex]?.[0] || '', v.target.value],
+                    ruleIndex,
+                    groupIndex,
+                  );
                 }}
               />
             )}

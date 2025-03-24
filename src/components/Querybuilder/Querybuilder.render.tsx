@@ -209,10 +209,9 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
 
   useEffect(() => {
     //fix for the input text issue when loosing focus at each rerender
-    if (focusedInput.groupIndex != null && focusedInput.ruleIndex != null && inputRefs) {
+    if (focusedInput.groupIndex != null && focusedInput.ruleIndex != null && inputRefs?.current) {
       const input = inputRefs.current[focusedInput.groupIndex]?.[focusedInput.ruleIndex];
-
-      if (input) input.focus();
+      Array.isArray(input) ? input[0]?.focus() : input?.focus();
     }
   }, [inputValues]);
 
@@ -360,23 +359,41 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
   const formQuery = () => {
     let formedQuery: string = '';
     groups.forEach((group, groupIndex) => {
-      const groupQueries = group.rules.map((_, ruleIndex) => ({
-        label: finalLabels[groupIndex][ruleIndex] || '',
-        operator:
-          selectedOperators[groupIndex][ruleIndex] == 'contains' ||
-          selectedOperators[groupIndex][ruleIndex] == 'end'
-            ? '='
-            : selectedOperators[groupIndex][ruleIndex] || '',
-        value:
-          selectedOperators[groupIndex][ruleIndex] === 'is null' ||
-          selectedOperators[groupIndex][ruleIndex] === 'is not null'
+      const groupQueries = group.rules.map((_, ruleIndex) => {
+        const operator =
+          selectedOperators[groupIndex][ruleIndex] === 'between'
             ? ''
-            : selectedOperators[groupIndex][ruleIndex] === 'contains'
-              ? '"@' + `${inputValues[groupIndex][ruleIndex]}@"`
-              : selectedOperators[groupIndex][ruleIndex] === 'end'
-                ? '"@' + inputValues[groupIndex][ruleIndex] + '"'
-                : '"' + inputValues[groupIndex][ruleIndex] + '"' || '',
-      }));
+            : selectedOperators[groupIndex][ruleIndex] == 'contains' ||
+                selectedOperators[groupIndex][ruleIndex] == 'end'
+              ? '='
+              : selectedOperators[groupIndex][ruleIndex] || '';
+        let value =
+          selectedOperators[groupIndex][ruleIndex] === 'between'
+            ? ''
+            : selectedOperators[groupIndex][ruleIndex] === 'is null' ||
+                selectedOperators[groupIndex][ruleIndex] === 'is not null'
+              ? ''
+              : selectedOperators[groupIndex][ruleIndex] === 'contains'
+                ? `"@${inputValues[groupIndex][ruleIndex]}@"`
+                : selectedOperators[groupIndex][ruleIndex] === 'end'
+                  ? `"@${inputValues[groupIndex][ruleIndex]}"`
+                  : `"${inputValues[groupIndex][ruleIndex]}"` || '';
+        // between case ->2 inputs
+        if (
+          selectedOperators[groupIndex][ruleIndex] === 'between' &&
+          Array.isArray(inputValues[groupIndex][ruleIndex]) &&
+          inputValues[groupIndex][ruleIndex].length === 2
+        ) {
+          const [start, end] = inputValues[groupIndex][ruleIndex];
+          value = '<=' + start + ' AND ' + finalLabels[groupIndex][ruleIndex] + '>=' + end + '';
+        }
+        return {
+          label: finalLabels[groupIndex][ruleIndex] || '',
+          operator,
+          value,
+        };
+      });
+
       groupQueries.forEach((queryPart, queryIndex) => {
         formedQuery += queryPart.label + ' ' + queryPart.operator + ' ' + queryPart.value;
         if (queryIndex < groupQueries.length - 1) {
