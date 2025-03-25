@@ -60,10 +60,10 @@ const NewRule: FC<IQueryRuleProps> = ({
       );
       if (propertyFromInput) {
         setProperty(propertyFromInput);
-      }
-      updateLabel(defaultInput.source, ruleIndex, groupIndex);
-      if (propertyFromInput && propertyFromInput.isRelated) {
-        handlePropertyChange({ target: { value: defaultInput.source } }, ruleIndex, groupIndex);
+        updateLabel(defaultInput.source, ruleIndex, groupIndex);
+        if (propertyFromInput && propertyFromInput.isRelated) {
+          handlePropertyChange({ target: { value: defaultInput.source } }, ruleIndex, groupIndex);
+        }
       }
     }
     if (selectedProperty) {

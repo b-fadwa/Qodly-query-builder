@@ -445,7 +445,15 @@ const Querybuilder: FC<IQuerybuilderProps> = ({
           value,
         };
       });
-
+      if (
+        groups[groupIndex].rules.length > 1 &&
+        !isAndActive[groupIndex] &&
+        !isExceptActive[groupIndex] &&
+        !isOrActive[groupIndex]
+      ) {
+        console.error("Select an operator for the group's rules");
+        return;
+      }
       groupQueries.forEach((queryPart, queryIndex) => {
         formedQuery += queryPart.label + ' ' + queryPart.operator + ' ' + queryPart.value;
         if (queryIndex < groupQueries.length - 1) {
@@ -462,7 +470,9 @@ const Querybuilder: FC<IQuerybuilderProps> = ({
       });
       if (groupIndex < groups.length - 1) {
         formedQuery +=
-          groupOperators[groupIndex] === '' ? ' And ' : ' ' + groupOperators[groupIndex] + ' ';
+          groupOperators[groupIndex] === '' || groupOperators[groupIndex] === undefined
+            ? ' and '
+            : ' ' + groupOperators[groupIndex] + ' ';
       }
     });
     setQuery(formedQuery);
