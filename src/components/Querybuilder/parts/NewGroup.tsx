@@ -211,7 +211,7 @@ const NewGroup: FC<IQueryGroupProps> = ({
                 </div>
               )}
               {/* Render rules from groups */}
-              {(defaultInputs.length === 0 || isNewRule) &&
+              {(defaultInputs.length === 0 || isNewRule || index > 0) &&
                 groups[index]?.rules?.map((_: any, ruleIndex: number) => (
                   <div
                     key={ruleIndex} // Ensure unique key for each rule
