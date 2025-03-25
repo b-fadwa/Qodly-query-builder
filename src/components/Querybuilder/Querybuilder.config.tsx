@@ -55,7 +55,13 @@ export default {
       accept: ['entitysel'],
     },
   },
-  defaultProps: {},
+  defaultProps: {
+    style: {
+      width: '100%',
+    },
+  },
 } as T4DComponentConfig<IQuerybuilderProps>;
 
-export interface IQuerybuilderProps extends webforms.ComponentProps {}
+export interface IQuerybuilderProps extends webforms.ComponentProps {
+  dataAttributes: any[];
+}

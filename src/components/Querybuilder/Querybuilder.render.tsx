@@ -4,7 +4,12 @@ import { FC, useEffect, useRef, useState } from 'react';
 
 import { IQuerybuilderProps } from './Querybuilder.config';
 import NewGroup from './parts/NewGroup';
-const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [] }) => {
+const Querybuilder: FC<IQuerybuilderProps> = ({
+  dataAttributes,
+  style,
+  className,
+  classNames = [],
+}) => {
   const { connect } = useRenderer();
   const [groups, setGroups] = useState([{ rules: [{}] }]);
   //query properties states
@@ -38,6 +43,9 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
   const inputRefs = useRef<{
     [groupIndex: number]: { [ruleIndex: number]: HTMLInputElement | null };
   }>({});
+  //default rules
+  const [inputs, setInputs] = useState<any[]>([]);
+  const [isNewRule, setIsNewRule] = useState<boolean>(false);
 
   const {
     sources: { datasource: ds },
@@ -142,6 +150,37 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
     setInputValues([[]]);
   }, []);
 
+  useEffect(() => {
+    // If ds is loaded and allProperties are set
+    if (allProperties.length > 0 && dataAttributes && dataAttributes.length > 0) {
+      const updatedInputs = dataAttributes.map((entry: any) => {
+        const property = allProperties.find((prop) => prop.name === entry.source);
+
+        return {
+          source: entry.source,
+          type: property.type,
+          isString: property.isString,
+          isNumber: property.isNumber,
+          isBoolean: property.isBoolean,
+          isDate: property.isDate,
+          isImage: property.isImage,
+          isDuration: property.isDuration,
+          isRelated: property.isRelated,
+        };
+      });
+
+      setInputs(updatedInputs);
+    }
+
+    if (dataAttributes && dataAttributes.length > 0) {
+      setGroups([
+        {
+          rules: Array(dataAttributes.length).fill({}),
+        },
+      ]);
+    }
+  }, [dataAttributes, allProperties]);
+
   const generateRule = (groupIndex: number) => {
     setGroups((prevGroups) => {
       const updatedGroups = [...prevGroups]; //to return the old groups as well appended with the new rule
@@ -152,6 +191,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
       };
       return updatedGroups;
     });
+    setIsNewRule(true);
     setSelectedLabels((prevLabels) => [...prevLabels, []]);
     setSelectedOperators((prevOperators) => [...prevOperators, []]);
     setInputValues((prevInputs) => [...prevInputs, []]);
@@ -442,6 +482,8 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
           {groups.map(({}, index) => (
             <div key={index}>
               <NewGroup
+                defaultInputs={inputs}
+                isNewRule={isNewRule}
                 groups={groups}
                 index={index}
                 isAndGroupActive={isAndGroupActive}

@@ -59,13 +59,6 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
             ></input>
             <select className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}>
               <option value="">Operator</option>
-              <option value="=">=</option>
-              <option value="!=">!=</option>
-              <option value="&lt;">&lt;</option>
-              <option value="&gt;">&gt;</option>
-              <option value="&lt;=">&lt;=</option>
-              <option value="&gt;=">&gt;=</option>
-              <option value="begin">Starts with</option>
             </select>
             <input
               type="text"

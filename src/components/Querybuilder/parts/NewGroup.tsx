@@ -4,6 +4,8 @@ import NewRule from './NewRule';
 import { FaRegTrashAlt } from 'react-icons/fa';
 
 interface IQueryGroupProps {
+  defaultInputs: any;
+  isNewRule: boolean;
   groups: any;
   index: any;
   isAndGroupActive: any;
@@ -37,6 +39,8 @@ interface IQueryGroupProps {
   relatedAttributes: any;
 }
 const NewGroup: FC<IQueryGroupProps> = ({
+  defaultInputs,
+  isNewRule,
   groups,
   isAndGroupActive,
   setGroupAndOperator,
@@ -168,39 +172,82 @@ const NewGroup: FC<IQueryGroupProps> = ({
               </div>
             </div>
             <div className={cn('builder-body', 'flex flex-col grow p-2')}>
-              {groups[index]?.rules?.map((_: any, ruleIndex: number) => (
-                <div key={ruleIndex} className={cn('builder-rule-line', 'flex items-center')}>
-                  {/* <NewRule ruleIndex={ruleIndex} groupIndex={groupIndex} /> */}
-                  <NewRule
-                    labelSelect={labelSelect}
-                    operator={operator}
-                    updateLabel={updateLabel}
-                    properties={properties}
-                    groupIndex={index}
-                    ruleIndex={ruleIndex}
-                    selectedOperators={selectedOperators}
-                    updateOperator={updateOperator}
-                    inputRefs={inputRefs}
-                    inputValues={inputValues}
-                    updateInput={updateInput}
-                    allProperties={allProperties}
-                    selectedRelatedLabels={selectedRelatedLabels}
-                    selectedLabels={selectedLabels}
-                    setRelatedAttributes={setRelatedAttributes}
-                    updateRelatedLabel={updateRelatedLabel}
-                    relatedAttributes={relatedAttributes}
-                  />
-                  <button
-                    className={cn(
-                      'builder-remove',
-                      'bg-white h-fit p-3 rounded-md border-2 border-rose-500 text-rose-500',
-                    )}
-                    onClick={() => removeRule(index, ruleIndex)}
-                  >
-                    <FaRegTrashAlt />
-                  </button>
+              {/* Render defaultInputs if they exist and for the first group */}
+              {defaultInputs.length > 0 && index === 0 && !isNewRule && (
+                <div className="flex flex-col justify-start gap-1">
+                  {defaultInputs.map((input: any, inputIndex: number) => (
+                    <div className="builder-rule-line flex items-center" key={inputIndex}>
+                      <NewRule
+                        defaultInput={input}
+                        labelSelect={labelSelect}
+                        operator={operator}
+                        updateLabel={updateLabel}
+                        properties={properties}
+                        groupIndex={index}
+                        ruleIndex={inputIndex}
+                        selectedOperators={selectedOperators}
+                        updateOperator={updateOperator}
+                        inputRefs={inputRefs}
+                        inputValues={inputValues}
+                        updateInput={updateInput}
+                        allProperties={allProperties}
+                        selectedRelatedLabels={selectedRelatedLabels}
+                        selectedLabels={selectedLabels}
+                        setRelatedAttributes={setRelatedAttributes}
+                        updateRelatedLabel={updateRelatedLabel}
+                        relatedAttributes={relatedAttributes}
+                      />
+                      <button
+                        className={cn(
+                          'builder-remove',
+                          'bg-white h-fit p-3 rounded-md border-2 border-rose-500 text-rose-500',
+                        )}
+                        onClick={() => removeRule(index, inputIndex)}
+                      >
+                        <FaRegTrashAlt />
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
+              {/* Render rules from groups */}
+              {(defaultInputs.length === 0 || isNewRule) &&
+                groups[index]?.rules?.map((_: any, ruleIndex: number) => (
+                  <div
+                    key={ruleIndex} // Ensure unique key for each rule
+                    className={cn('builder-rule-line', 'flex items-center')}
+                  >
+                    <NewRule
+                      defaultInput={null} // No default input for rules from groups
+                      labelSelect={labelSelect}
+                      operator={operator}
+                      updateLabel={updateLabel}
+                      properties={properties}
+                      groupIndex={index}
+                      ruleIndex={ruleIndex}
+                      selectedOperators={selectedOperators}
+                      updateOperator={updateOperator}
+                      inputRefs={inputRefs}
+                      inputValues={inputValues}
+                      updateInput={updateInput}
+                      allProperties={allProperties}
+                      selectedRelatedLabels={selectedRelatedLabels}
+                      selectedLabels={selectedLabels}
+                      setRelatedAttributes={setRelatedAttributes}
+                      updateRelatedLabel={updateRelatedLabel}
+                      relatedAttributes={relatedAttributes}
+                    />
+                    <button
+                      className={cn(
+                        'builder-remove',
+                        'bg-white h-fit p-3 rounded-md border-2 border-rose-500 text-rose-500',
+                      )}
+                      onClick={() => removeRule(index, ruleIndex)}
+                    >
+                      <FaRegTrashAlt />
+                    </button>
+                  </div>
+                ))}
             </div>
           </div>
         </div>
