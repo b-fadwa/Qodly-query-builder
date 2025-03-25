@@ -87,7 +87,7 @@ const NewRule: FC<IQueryRuleProps> = ({
       <select
         className="builder-input p-2 h-10 rounded-md grow"
         ref={labelSelect}
-        value={selectedLabels?.[groupIndex]?.[ruleIndex]}
+        value={selectedLabels?.[groupIndex]?.[ruleIndex] ?? ''}
         onChange={(v) => {
           updateLabel(v.target.value, ruleIndex, groupIndex);
           handlePropertyChange(v, ruleIndex, groupIndex);
@@ -105,7 +105,7 @@ const NewRule: FC<IQueryRuleProps> = ({
         <select
           className="builder-input p-2 h-10 rounded-md grow"
           ref={labelSelect}
-          value={selectedRelatedLabels?.[groupIndex]?.[ruleIndex]}
+          value={selectedRelatedLabels?.[groupIndex]?.[ruleIndex] ?? ''}
           onChange={(v) => {
             updateRelatedLabel(v.target.value, ruleIndex, groupIndex);
             handlePropertyChange(v, ruleIndex, groupIndex);
