@@ -153,10 +153,22 @@ const Querybuilder: FC<IQuerybuilderProps> = ({
   useEffect(() => {
     // If ds is loaded and allProperties are set
     if (allProperties.length > 0 && dataAttributes && dataAttributes.length > 0) {
-      const updatedInputs = dataAttributes.map((entry: any) => {
-        const property = allProperties.find((prop) => prop.name === entry.source);
+      const updatedInputs: any[] = [];
+      dataAttributes.forEach((entry: any) => {
+        if (!entry.source) {
+          // nothing's written
+          console.error('Empty source in properties !');
+          return;
+        }
 
-        return {
+        const property = allProperties.find((prop) => prop.name === entry.source);
+        if (!property) {
+          // Property not found
+          console.error('Property not found in the dataclass !');
+          return;
+        }
+
+        updatedInputs.push({
           source: entry.source,
           type: property.type,
           isString: property.isString,
@@ -166,18 +178,18 @@ const Querybuilder: FC<IQuerybuilderProps> = ({
           isImage: property.isImage,
           isDuration: property.isDuration,
           isRelated: property.isRelated,
-        };
+        });
       });
 
       setInputs(updatedInputs);
-    }
 
-    if (dataAttributes && dataAttributes.length > 0) {
-      setGroups([
-        {
-          rules: Array(dataAttributes.length).fill({}),
-        },
-      ]);
+      if (updatedInputs.length > 0) {
+        setGroups([
+          {
+            rules: Array(updatedInputs.length).fill({}),
+          },
+        ]);
+      }
     }
   }, [dataAttributes, allProperties]);
 

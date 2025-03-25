@@ -9,7 +9,7 @@ const commonSettings: TSetting[] = [
     titleProperty: 'title',
     data: [
       {
-        label: 'Source',
+        label: 'Attribute',
         type: ESetting.DS_AUTO_SUGGEST,
         key: 'source',
       },
