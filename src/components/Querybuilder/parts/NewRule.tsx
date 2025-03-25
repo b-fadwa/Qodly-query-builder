@@ -53,7 +53,7 @@ const NewRule: FC<IQueryRuleProps> = ({
     : null;
 
   useEffect(() => {
-    if (defaultInput && !selectedProperty) {
+    if (defaultInput) {
       const selectedKeyFromInput = defaultInput.source;
       const propertyFromInput = allProperties.find(
         (prop: any) => prop.name === selectedKeyFromInput,
@@ -61,7 +61,7 @@ const NewRule: FC<IQueryRuleProps> = ({
       if (propertyFromInput) {
         setProperty(propertyFromInput);
         updateLabel(defaultInput.source, ruleIndex, groupIndex);
-        if (propertyFromInput && propertyFromInput.isRelated) {
+        if (propertyFromInput.isRelated) {
           handlePropertyChange({ target: { value: defaultInput.source } }, ruleIndex, groupIndex);
         }
       }
@@ -69,7 +69,7 @@ const NewRule: FC<IQueryRuleProps> = ({
     if (selectedProperty) {
       setProperty(selectedProperty);
     }
-  }, [defaultInput, selectedProperty, allProperties]);
+  }, [defaultInput, selectedProperty]);
 
   //get related attributes of the selected related attribute..
   const handlePropertyChange = (v: any, ruleIndex: number, groupIndex: number) => {
