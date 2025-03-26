@@ -1,82 +1,244 @@
-import { FC } from 'react';
+import { FC, useState } from 'react';
 import cn from 'classnames';
 import NewRule from './NewRule';
 import { FaRegTrashAlt } from 'react-icons/fa';
 
 interface IQueryGroupProps {
-  defaultInputs: any;
-  isNewRule: boolean;
+  setGroups: (v: any) => void;
   groups: any;
+  setGroupOperators: (v: any) => void;
+  defaultInputs: any;
+  setInputs: (v: any) => void;
   index: any;
-  isAndGroupActive: any;
-  setGroupAndOperator: (index: any) => void;
-  isOrGroupActive: any;
-  setGroupOrOperator: (index: any) => void;
-  isAndActive: any;
-  setAndOperator: (index: any) => void;
-  isOrActive: any;
-  setOrOperator: (index: any) => void;
+  setAnd: (v: boolean) => void;
+  isAnd: boolean;
+  setOr: (v: boolean) => void;
+  isOr: boolean;
+  setExcept: (v: boolean) => void;
+  isExcept: boolean;
+  setExceptActive: (v: any) => void;
   isExceptActive: any;
-  setExceptOperator: (index: any) => void;
-  generateRule: (groupIndex: number) => void;
-  generateGroup: () => void;
-  removeRule: (groupIndex: number, ruleIndex: number) => void;
+  setAndActive: (v: any) => void;
+  isAndActive: any;
+  setOrActive: (v: any) => void;
+  isOrActive: any;
+  setAndGroupActive: (v: any) => void;
+  isAndGroupActive: any;
+  setOrGroupActive: (v: any) => void;
+  isOrGroupActive: any;
   //rule related props:
   labelSelect: any;
   operator: any;
-  updateLabel: (event: any, ruleIndex: any, groupIndex: any) => void;
   properties: any;
+  setSelectedOperators: (v: any) => void;
   selectedOperators: any;
-  updateOperator: (event: any, ruleIndex: any, groupIndex: any) => void;
   inputRefs: any;
+  setInputValues: (v: any) => void;
   inputValues: any;
-  updateInput: (event: any, ruleIndex: any, groupIndex: any) => void;
   allProperties: any;
+  setSelectedRelatedLabels: (v: any) => void;
   selectedRelatedLabels: any;
+  setSelectedLabels: (v: any) => void;
   selectedLabels: any;
   setRelatedAttributes: (att: any) => void;
-  updateRelatedLabel: (v: string, ruleIndex: number, groupIndex: number) => void;
+  setFinalLabels: (v: any) => void;
   relatedAttributes: any;
   isCleared: boolean;
   setIsCleared: (v: boolean) => void;
 }
 const NewGroup: FC<IQueryGroupProps> = ({
+  setGroups,
+  setSelectedLabels,
+  setGroupOperators,
   defaultInputs,
-  isNewRule,
+  setInputs,
   groups,
-  isAndGroupActive,
-  setGroupAndOperator,
-  isOrGroupActive,
-  setGroupOrOperator,
+  setAndActive,
   isAndActive,
-  setAndOperator,
-  isOrActive,
-  setOrOperator,
+  setExceptActive,
   isExceptActive,
-  setExceptOperator,
-  generateRule,
-  generateGroup,
-  removeRule,
+  setOrActive,
+  isOrActive,
+  setAndGroupActive,
+  isAndGroupActive,
+  setOrGroupActive,
+  isOrGroupActive,
   //rule related props
   labelSelect,
   operator,
-  updateLabel,
   properties,
   index,
+  setSelectedOperators,
   selectedOperators,
-  updateOperator,
   inputRefs,
+  setInputValues,
   inputValues,
-  updateInput,
   allProperties,
+  setSelectedRelatedLabels,
   selectedRelatedLabels,
   selectedLabels,
   setRelatedAttributes,
-  updateRelatedLabel,
+  setFinalLabels,
   relatedAttributes,
   isCleared,
   setIsCleared,
 }) => {
+  const [isAndGroup, setGroupAnd] = useState<boolean>(false);
+  const [isOrGroup, setGroupOr] = useState<boolean>(false);
+  const [isAnd, setAnd] = useState<boolean>(false);
+  const [isOr, setOr] = useState<boolean>(false);
+  const [isExcept, setExcept] = useState<boolean>(false);
+  const [isNewRule, setIsNewRule] = useState<boolean>(false);
+
+  const setAndOperator = (index: number) => {
+    setOr(isAnd);
+    setExcept(isAnd);
+    setAnd(!isAnd);
+    const updatedAndStates = [...isAndActive];
+    updatedAndStates[index] = !updatedAndStates[index];
+    setAndActive(updatedAndStates);
+    const updatedOrStates = [...isOrActive];
+    updatedOrStates[index] = false;
+    setOrActive(updatedOrStates);
+    const updatedExceptStates = [...isExceptActive];
+    updatedExceptStates[index] = false;
+    setExceptActive(updatedExceptStates);
+  };
+
+  const setOrOperator = (index: number) => {
+    setAnd(isOr);
+    setExcept(isOr);
+    setOr(!isOr);
+    const updatedOrStates = [...isOrActive];
+    updatedOrStates[index] = !updatedOrStates[index];
+    setOrActive(updatedOrStates);
+    const updatedAndStates = [...isAndActive];
+    updatedAndStates[index] = false;
+    setAndActive(updatedAndStates);
+    const updatedExceptStates = [...isExceptActive];
+    updatedExceptStates[index] = false;
+    setExceptActive(updatedExceptStates);
+  };
+
+  const setExceptOperator = (index: number) => {
+    setAnd(isExcept);
+    setOr(isExcept);
+    setExcept(!isExcept);
+    const updatedExceptStates = [...isExceptActive];
+    updatedExceptStates[index] = !updatedExceptStates[index];
+    setExceptActive(updatedExceptStates);
+    const updatedAndStates = [...isAndActive];
+    updatedAndStates[index] = false;
+    setAndActive(updatedAndStates);
+    const updatedOrStates = [...isOrActive];
+    updatedOrStates[index] = false;
+    setOrActive(updatedOrStates);
+  };
+
+  const setGroupAndOperator = (index: number) => {
+    setGroupOr(isAndGroup);
+    setGroupAnd(!isAndGroup);
+    const updatedAndStates = [...isAndGroupActive];
+    updatedAndStates[index] = !updatedAndStates[index];
+    setAndGroupActive(updatedAndStates);
+    const updatedOrStates = [...isOrGroupActive];
+    updatedOrStates[index] = false;
+    setOrGroupActive(updatedOrStates);
+    handleGroupOperatorChange(index - 1, 'AND');
+  };
+
+  const setGroupOrOperator = (index: number) => {
+    setGroupAnd(isOrGroup);
+    setGroupOr(!isOrGroup);
+    const updatedOrStates = [...isOrGroupActive];
+    updatedOrStates[index] = !updatedOrStates[index];
+    setOrGroupActive(updatedOrStates);
+    const updatedAndStates = [...isAndGroupActive];
+    updatedAndStates[index] = false;
+    setAndGroupActive(updatedAndStates);
+    handleGroupOperatorChange(index - 1, 'OR');
+  };
+
+  const handleGroupOperatorChange = (index: number, operator: string) => {
+    setGroupOperators((prev: any) => {
+      const updated = [...prev];
+      updated[index] = operator;
+      return updated;
+    });
+  };
+
+  const removeRule = (groupIndex: number, ruleIndex: number) => {
+    if (groupIndex == 0 && ruleIndex == 0) {
+      window.confirm('Cannot remove the by default rule');
+      return;
+    }
+    setInputs((prev: any) => prev.filter((_: any, idx: any) => idx !== ruleIndex));
+    setGroups((prevGroups: any) => {
+      return prevGroups.map((group: any, groupId: any) => {
+        if (groupId === groupIndex) {
+          return {
+            ...group,
+            rules: group.rules.filter((_: any, ruleId: any) => ruleId !== ruleIndex),
+          };
+        }
+        return group;
+      });
+    });
+    //update the related fields
+    setSelectedLabels((prevLabels: any) => {
+      return prevLabels.map((labelGroup: any, groupId: any) => {
+        if (groupId === groupIndex) {
+          return labelGroup.filter((_: any, ruleId: any) => ruleId !== ruleIndex);
+        }
+        return labelGroup;
+      });
+    });
+    setSelectedOperators((prevOperators: any) => {
+      return prevOperators.map((operatorGroup: any, groupId: any) => {
+        if (groupId === groupIndex) {
+          return operatorGroup.filter((_: any, ruleId: any) => ruleId !== ruleIndex);
+        }
+        return operatorGroup;
+      });
+    });
+    setInputValues((prevInputs: any) => {
+      return prevInputs.map((inputGroup: any, groupId: any) => {
+        if (groupId === groupIndex) {
+          return inputGroup.filter((_: any, ruleId: any) => ruleId !== ruleIndex);
+        }
+        return inputGroup;
+      });
+    });
+  };
+
+  const updateOperator = (v: string, ruleIndex: number, groupIndex: number) => {
+    const updatedOperators = [...selectedOperators];
+    updatedOperators[groupIndex][ruleIndex] = v;
+    setSelectedOperators(updatedOperators);
+  };
+
+  const generateGroup = () => {
+    setGroups([...groups, { rules: [{}] }]); //generate a new group with a first rule
+    setSelectedLabels((prevLabels: any) => [...prevLabels, []]);
+    setSelectedOperators((prevOperators: any) => [...prevOperators, []]);
+    setInputValues((prevInputs: any) => [...prevInputs, []]);
+  };
+
+  const generateRule = (groupIndex: number) => {
+    setGroups((prevGroups: any) => {
+      const updatedGroups = [...prevGroups]; //to return the old groups as well appended with the new rule
+      updatedGroups[groupIndex] = {
+        //add a new rule to the selected group after creating a copy of it to return old rules too
+        ...updatedGroups[groupIndex],
+        rules: [...updatedGroups[groupIndex].rules, {}], // Append a new rule to th
+      };
+      return updatedGroups;
+    });
+    setIsNewRule(true);
+    setSelectedLabels((prevLabels: any) => [...prevLabels, []]);
+    setSelectedOperators((prevOperators: any) => [...prevOperators, []]);
+    setInputValues((prevInputs: any) => [...prevInputs, []]);
+  };
   return (
     <>
       {groups[index] && groups[index].rules && groups[index].rules.length > 0 && (
@@ -185,7 +347,6 @@ const NewGroup: FC<IQueryGroupProps> = ({
                         defaultInput={input}
                         labelSelect={labelSelect}
                         operator={operator}
-                        updateLabel={updateLabel}
                         properties={properties}
                         groupIndex={index}
                         ruleIndex={inputIndex}
@@ -193,15 +354,17 @@ const NewGroup: FC<IQueryGroupProps> = ({
                         updateOperator={updateOperator}
                         inputRefs={inputRefs}
                         inputValues={inputValues}
-                        updateInput={updateInput}
+                        setInputValues={setInputValues}
                         allProperties={allProperties}
                         selectedRelatedLabels={selectedRelatedLabels}
                         selectedLabels={selectedLabels}
                         setRelatedAttributes={setRelatedAttributes}
-                        updateRelatedLabel={updateRelatedLabel}
                         relatedAttributes={relatedAttributes}
                         isCleared={isCleared}
                         setIsCleared={setIsCleared}
+                        setSelectedLabels={setSelectedLabels}
+                        setSelectedRelatedLabels={setSelectedRelatedLabels}
+                        setFinalLabels={setFinalLabels}
                       />
                       <button
                         className={cn(
@@ -227,7 +390,6 @@ const NewGroup: FC<IQueryGroupProps> = ({
                       defaultInput={null} // No default input for rules from groups
                       labelSelect={labelSelect}
                       operator={operator}
-                      updateLabel={updateLabel}
                       properties={properties}
                       groupIndex={index}
                       ruleIndex={ruleIndex}
@@ -235,15 +397,17 @@ const NewGroup: FC<IQueryGroupProps> = ({
                       updateOperator={updateOperator}
                       inputRefs={inputRefs}
                       inputValues={inputValues}
-                      updateInput={updateInput}
+                      setInputValues={setInputValues}
                       allProperties={allProperties}
                       selectedRelatedLabels={selectedRelatedLabels}
                       selectedLabels={selectedLabels}
                       setRelatedAttributes={setRelatedAttributes}
-                      updateRelatedLabel={updateRelatedLabel}
                       relatedAttributes={relatedAttributes}
                       isCleared={isCleared}
                       setIsCleared={setIsCleared}
+                      setSelectedLabels={setSelectedLabels}
+                      setSelectedRelatedLabels={setSelectedRelatedLabels}
+                      setFinalLabels={setFinalLabels}
                     />
                     <button
                       className={cn(

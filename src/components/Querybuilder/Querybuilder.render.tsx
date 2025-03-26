@@ -33,19 +33,14 @@ const Querybuilder: FC<IQuerybuilderProps> = ({
   const [isOrActive, setOrActive] = useState<boolean[]>([]);
   const [isExceptActive, setExceptActive] = useState<boolean[]>([]);
   //and , or states for each group
-  const [isAndGroup, setGroupAnd] = useState<boolean>(false);
-  const [isOrGroup, setGroupOr] = useState<boolean>(false);
   const [isAndGroupActive, setAndGroupActive] = useState<boolean[]>([]);
   const [isOrGroupActive, setOrGroupActive] = useState<boolean[]>([]);
   const [groupOperators, setGroupOperators] = useState<string[]>([]);
-  //input focus states
-  const [focusedInput, setFocusedInput] = useState({ groupIndex: 0, ruleIndex: 0 });
   const inputRefs = useRef<{
     [groupIndex: number]: { [ruleIndex: number]: HTMLInputElement | null };
   }>({});
   //default rules
   const [inputs, setInputs] = useState<any[]>([]);
-  const [isNewRule, setIsNewRule] = useState<boolean>(false);
   const [isCleared, setIsCleared] = useState<boolean>(false);
 
   const {
@@ -194,123 +189,6 @@ const Querybuilder: FC<IQuerybuilderProps> = ({
     }
   }, [dataAttributes, allProperties]);
 
-  const generateRule = (groupIndex: number) => {
-    setGroups((prevGroups) => {
-      const updatedGroups = [...prevGroups]; //to return the old groups as well appended with the new rule
-      updatedGroups[groupIndex] = {
-        //add a new rule to the selected group after creating a copy of it to return old rules too
-        ...updatedGroups[groupIndex],
-        rules: [...updatedGroups[groupIndex].rules, {}], // Append a new rule to th
-      };
-      return updatedGroups;
-    });
-    setIsNewRule(true);
-    setSelectedLabels((prevLabels) => [...prevLabels, []]);
-    setSelectedOperators((prevOperators) => [...prevOperators, []]);
-    setInputValues((prevInputs) => [...prevInputs, []]);
-  };
-
-  const generateGroup = () => {
-    setGroups([...groups, { rules: [{}] }]); //generate a new group with a first rule
-    setSelectedLabels((prevLabels) => [...prevLabels, []]);
-    setSelectedOperators((prevOperators) => [...prevOperators, []]);
-    setInputValues((prevInputs) => [...prevInputs, []]);
-  };
-
-  const updateLabel = (v: string, ruleIndex: number, groupIndex: number) => {
-    const updatedLabels = [...selectedLabels];
-    updatedLabels[groupIndex][ruleIndex] = v;
-    setSelectedLabels(updatedLabels);
-    updateFinalLabels(updatedLabels, selectedRelatedLabels);
-  };
-
-  const updateRelatedLabel = (v: string, ruleIndex: number, groupIndex: number) => {
-    setSelectedRelatedLabels((prev) => {
-      const updatedRelatedLabels = [...prev];
-      if (!updatedRelatedLabels[groupIndex]) {
-        updatedRelatedLabels[groupIndex] = [];
-      }
-      updatedRelatedLabels[groupIndex][ruleIndex] = v;
-      updateFinalLabels(updatedRelatedLabels, selectedRelatedLabels);
-      return updatedRelatedLabels;
-    });
-  };
-
-  //final labels(storage and related by rule)
-  const updateFinalLabels = (updatedLabels: string[][], updatedRelatedLabels: string[][]) => {
-    const updatedFinalLabels = updatedLabels.map((groupLabels, groupIndex) => {
-      return groupLabels.map((label, ruleIndex) => {
-        const relatedLabel = updatedRelatedLabels[groupIndex]?.[ruleIndex];
-        return relatedLabel ? relatedLabel : label;
-      });
-    });
-    setFinalLabels(updatedFinalLabels);
-  };
-
-  const updateOperator = (v: string, ruleIndex: number, groupIndex: number) => {
-    const updatedOperators = [...selectedOperators];
-    updatedOperators[groupIndex][ruleIndex] = v;
-    setSelectedOperators(updatedOperators);
-  };
-
-  const updateInput = (v: string, ruleIndex: number, groupIndex: number) => {
-    const updatedValues = [...inputValues];
-    updatedValues[groupIndex][ruleIndex] = v;
-    setInputValues(updatedValues);
-    setFocusedInput({ ruleIndex, groupIndex });
-  };
-
-  useEffect(() => {
-    //fix for the input text issue when loosing focus at each rerender
-    if (focusedInput.groupIndex != null && focusedInput.ruleIndex != null && inputRefs?.current) {
-      const input = inputRefs.current[focusedInput.groupIndex]?.[focusedInput.ruleIndex];
-      Array.isArray(input) ? input[0]?.focus() : input?.focus();
-    }
-  }, [inputValues]);
-
-  const removeRule = (groupIndex: number, ruleIndex: number) => {
-    if (groupIndex == 0 && ruleIndex == 0) {
-      window.confirm('Cannot remove the by default rule');
-      return;
-    }
-    setGroups((prevGroups) => {
-      return prevGroups.map((group, groupId) => {
-        if (groupId === groupIndex) {
-          return {
-            ...group,
-            rules: group.rules.filter((_, ruleId) => ruleId !== ruleIndex),
-          };
-        }
-        return group;
-      });
-    });
-    //update the related fields
-    setSelectedLabels((prevLabels) => {
-      return prevLabels.map((labelGroup, groupId) => {
-        if (groupId === groupIndex) {
-          return labelGroup.filter((_, ruleId) => ruleId !== ruleIndex);
-        }
-        return labelGroup;
-      });
-    });
-    setSelectedOperators((prevOperators) => {
-      return prevOperators.map((operatorGroup, groupId) => {
-        if (groupId === groupIndex) {
-          return operatorGroup.filter((_, ruleId) => ruleId !== ruleIndex);
-        }
-        return operatorGroup;
-      });
-    });
-    setInputValues((prevInputs) => {
-      return prevInputs.map((inputGroup, groupId) => {
-        if (groupId === groupIndex) {
-          return inputGroup.filter((_, ruleId) => ruleId !== ruleIndex);
-        }
-        return inputGroup;
-      });
-    });
-  };
-
   const clearBuilder = () => {
     setGroups([{ rules: [{}] }]);
     //+clear datasources binded to inputs...
@@ -321,6 +199,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({
     setInputValues([[]]);
     setAnd(false);
     setOr(false);
+    setExcept(false);
     setAndActive([]);
     setOrActive([]);
     setExceptActive([]);
@@ -332,83 +211,6 @@ const Querybuilder: FC<IQuerybuilderProps> = ({
     }, 0);
     setIsCleared(true);
     setInputs([]);
-  };
-
-  const setAndOperator = (index: number) => {
-    setOr(isAnd);
-    setExcept(isAnd);
-    setAnd(!isAnd);
-    const updatedAndStates = [...isAndActive];
-    updatedAndStates[index] = !updatedAndStates[index];
-    setAndActive(updatedAndStates);
-    const updatedOrStates = [...isOrActive];
-    updatedOrStates[index] = false;
-    setOrActive(updatedOrStates);
-    const updatedExceptStates = [...isExceptActive];
-    updatedExceptStates[index] = false;
-    setExceptActive(updatedExceptStates);
-  };
-
-  const setOrOperator = (index: number) => {
-    setAnd(isOr);
-    setExcept(isOr);
-    setOr(!isOr);
-    const updatedOrStates = [...isOrActive];
-    updatedOrStates[index] = !updatedOrStates[index];
-    setOrActive(updatedOrStates);
-    const updatedAndStates = [...isAndActive];
-    updatedAndStates[index] = false;
-    setAndActive(updatedAndStates);
-    const updatedExceptStates = [...isExceptActive];
-    updatedExceptStates[index] = false;
-    setExceptActive(updatedExceptStates);
-  };
-
-  const setExceptOperator = (index: number) => {
-    setAnd(isExcept);
-    setOr(isExcept);
-    setExcept(!isExcept);
-    const updatedExceptStates = [...isExceptActive];
-    updatedExceptStates[index] = !updatedExceptStates[index];
-    setExceptActive(updatedExceptStates);
-    const updatedAndStates = [...isAndActive];
-    updatedAndStates[index] = false;
-    setAndActive(updatedAndStates);
-    const updatedOrStates = [...isOrActive];
-    updatedOrStates[index] = false;
-    setOrActive(updatedOrStates);
-  };
-
-  const setGroupAndOperator = (index: number) => {
-    setGroupOr(isAndGroup);
-    setGroupAnd(!isAndGroup);
-    const updatedAndStates = [...isAndGroupActive];
-    updatedAndStates[index] = !updatedAndStates[index];
-    setAndGroupActive(updatedAndStates);
-    const updatedOrStates = [...isOrGroupActive];
-    updatedOrStates[index] = false;
-    setOrGroupActive(updatedOrStates);
-    handleGroupOperatorChange(index - 1, 'AND');
-  };
-
-  const setGroupOrOperator = (index: number) => {
-    setGroupAnd(isOrGroup);
-    setGroupOr(!isOrGroup);
-    const updatedOrStates = [...isOrGroupActive];
-    updatedOrStates[index] = !updatedOrStates[index];
-    setOrGroupActive(updatedOrStates);
-    const updatedAndStates = [...isAndGroupActive];
-    updatedAndStates[index] = false;
-    setAndGroupActive(updatedAndStates);
-    handleGroupOperatorChange(index - 1, 'OR');
-  };
-
-  const handleGroupOperatorChange = (index: number, operator: string) => {
-    setGroupOperators((prev) => {
-      const updated = [...prev];
-      updated[index] = operator;
-      return updated;
-    });
   };
 
   const formQuery = () => {
@@ -510,37 +312,43 @@ const Querybuilder: FC<IQuerybuilderProps> = ({
           {groups.map(({}, index) => (
             <div key={index}>
               <NewGroup
-                defaultInputs={inputs}
-                isNewRule={isNewRule}
+                setGroups={setGroups}
+                setSelectedLabels={setSelectedLabels}
                 groups={groups}
+                defaultInputs={inputs}
+                setInputs={setInputs}
                 index={index}
-                isAndGroupActive={isAndGroupActive}
-                setGroupAndOperator={setGroupAndOperator}
-                isOrGroupActive={isOrGroupActive}
-                setGroupOrOperator={setGroupOrOperator}
+                setGroupOperators={setGroupOperators}
+                setAndActive={setAndActive}
                 isAndActive={isAndActive}
-                setAndOperator={setAndOperator}
+                setOrActive={setOrActive}
                 isOrActive={isOrActive}
-                setOrOperator={setOrOperator}
+                setExceptActive={setExceptActive}
                 isExceptActive={isExceptActive}
-                setExceptOperator={setExceptOperator}
-                generateRule={generateRule}
-                generateGroup={generateGroup}
-                removeRule={removeRule}
+                setAnd={setAnd}
+                isAnd={isAnd}
+                setOr={setOr}
+                isOr={isOr}
+                setExcept={setExcept}
+                isExcept={isExcept}
+                setAndGroupActive={setAndGroupActive}
+                isAndGroupActive={isAndGroupActive}
+                setOrGroupActive={setOrGroupActive}
+                isOrGroupActive={isOrGroupActive}
                 labelSelect={labelSelect}
                 operator={operator}
-                updateLabel={updateLabel}
                 properties={properties}
+                setSelectedOperators={setSelectedOperators}
                 selectedOperators={selectedOperators}
-                updateOperator={updateOperator}
                 inputRefs={inputRefs}
+                setInputValues={setInputValues}
                 inputValues={inputValues}
-                updateInput={updateInput}
                 allProperties={allProperties}
                 selectedRelatedLabels={selectedRelatedLabels}
                 selectedLabels={selectedLabels}
+                setSelectedRelatedLabels={setSelectedRelatedLabels}
                 setRelatedAttributes={setRelatedAttributes}
-                updateRelatedLabel={updateRelatedLabel}
+                setFinalLabels={setFinalLabels}
                 relatedAttributes={relatedAttributes}
                 isCleared={isCleared}
                 setIsCleared={setIsCleared}

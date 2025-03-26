@@ -5,7 +5,6 @@ interface IQueryRuleProps {
   defaultInput: any;
   labelSelect: any;
   operator: any;
-  updateLabel: (event: any, ruleIndex: any, groupIndex: any) => void;
   properties: any;
   ruleIndex: any;
   groupIndex: any;
@@ -13,22 +12,23 @@ interface IQueryRuleProps {
   updateOperator: (event: any, ruleIndex: any, groupIndex: any) => void;
   inputRefs: any;
   inputValues: any;
-  updateInput: (event: any, ruleIndex: any, groupIndex: any) => void;
   allProperties: any;
   selectedRelatedLabels: any;
   selectedLabels: any;
   setRelatedAttributes: (att: any) => void;
-  updateRelatedLabel: (v: string, ruleIndex: number, groupIndex: number) => void;
   relatedAttributes: any;
   isCleared: boolean;
   setIsCleared: (v: boolean) => void;
+  setInputValues: (v: any) => void;
+  setSelectedLabels: (v: any) => void;
+  setSelectedRelatedLabels: (v: any) => void;
+  setFinalLabels: (v: any) => void;
 }
 
 const NewRule: FC<IQueryRuleProps> = ({
   defaultInput,
   labelSelect,
   operator,
-  updateLabel,
   properties,
   ruleIndex,
   groupIndex,
@@ -36,17 +36,21 @@ const NewRule: FC<IQueryRuleProps> = ({
   updateOperator,
   inputRefs,
   inputValues,
-  updateInput,
   allProperties,
   selectedRelatedLabels,
   selectedLabels,
   setRelatedAttributes,
-  updateRelatedLabel,
   relatedAttributes,
   isCleared,
   setIsCleared,
+  setInputValues,
+  setSelectedLabels,
+  setSelectedRelatedLabels,
+  setFinalLabels,
 }) => {
   const [property, setProperty] = useState<any>(); //if default exists else selected one setup
+  const [focusedInput, setFocusedInput] = useState({ groupIndex: 0, ruleIndex: 0 });
+
   const selectedKey =
     selectedRelatedLabels?.[groupIndex]?.[ruleIndex] !== undefined
       ? selectedRelatedLabels[groupIndex][ruleIndex]
@@ -113,6 +117,51 @@ const NewRule: FC<IQueryRuleProps> = ({
       });
     }
   };
+
+  const updateInput = (v: any, ruleIndex: number, groupIndex: number) => {
+    const updatedValues = [...inputValues];
+    updatedValues[groupIndex][ruleIndex] = v;
+    setInputValues(updatedValues);
+    setFocusedInput({ ruleIndex, groupIndex });
+  };
+
+  const updateLabel = (v: string, ruleIndex: number, groupIndex: number) => {
+    const updatedLabels = [...selectedLabels];
+    updatedLabels[groupIndex][ruleIndex] = v;
+    setSelectedLabels(updatedLabels);
+    updateFinalLabels(updatedLabels, selectedRelatedLabels);
+  };
+
+  const updateRelatedLabel = (v: string, ruleIndex: number, groupIndex: number) => {
+    setSelectedRelatedLabels((prev: any) => {
+      const updatedRelatedLabels = [...prev];
+      if (!updatedRelatedLabels[groupIndex]) {
+        updatedRelatedLabels[groupIndex] = [];
+      }
+      updatedRelatedLabels[groupIndex][ruleIndex] = v;
+      updateFinalLabels(updatedRelatedLabels, selectedRelatedLabels);
+      return updatedRelatedLabels;
+    });
+  };
+
+  //final labels(storage and related by rule)
+  const updateFinalLabels = (updatedLabels: string[][], updatedRelatedLabels: string[][]) => {
+    const updatedFinalLabels = updatedLabels.map((groupLabels, groupIndex) => {
+      return groupLabels.map((label, ruleIndex) => {
+        const relatedLabel = updatedRelatedLabels[groupIndex]?.[ruleIndex];
+        return relatedLabel ? relatedLabel : label;
+      });
+    });
+    setFinalLabels(updatedFinalLabels);
+  };
+
+  useEffect(() => {
+    //fix for the input text issue when loosing focus at each rerender
+    if (focusedInput.groupIndex != null && focusedInput.ruleIndex != null && inputRefs?.current) {
+      const input = inputRefs.current[focusedInput.groupIndex]?.[focusedInput.ruleIndex];
+      Array.isArray(input) ? input[0]?.focus() : input?.focus();
+    }
+  }, [inputValues]);
 
   return (
     <div className={cn('builder-new-rule', 'w-full h-fit flex flex-row p-2 gap-6')}>
