@@ -339,22 +339,53 @@ const NewRule: FC<IQueryRuleProps> = ({
       {property?.isDuration &&
         selectedOperators[groupIndex][ruleIndex] !== 'is null' &&
         selectedOperators[groupIndex][ruleIndex] !== 'is not null' && (
-          <input
-            type="time"
-            step="60"
-            placeholder="Value"
-            ref={(input) => {
-              if (!inputRefs.current[groupIndex]) {
-                inputRefs.current[groupIndex] = {};
-              }
-              inputRefs.current[groupIndex][ruleIndex] = input;
-            }}
-            className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
-            value={inputValues[groupIndex][ruleIndex] ?? ''}
-            onChange={(v) => {
-              updateInput(v.target.value, ruleIndex, groupIndex);
-            }}
-          ></input>
+          <>
+            <input
+              type="time"
+              step="60"
+              placeholder="Value"
+              ref={(input) => {
+                if (!inputRefs.current[groupIndex]) {
+                  inputRefs.current[groupIndex] = {};
+                }
+                inputRefs.current[groupIndex][ruleIndex] = input;
+              }}
+              className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
+              value={inputValues[groupIndex][ruleIndex]?.[0] || ''}
+              onChange={(v) => {
+                updateInput(
+                  [v.target.value, inputValues[groupIndex][ruleIndex]?.[1] || ''],
+                  ruleIndex,
+                  groupIndex,
+                );
+              }}
+            ></input>
+            {selectedOperators[groupIndex][ruleIndex] === 'between' && (
+              <input
+                type="time"
+                step="60"
+                placeholder="Value"
+                ref={(input) => {
+                  if (!inputRefs.current[groupIndex]) {
+                    inputRefs.current[groupIndex] = {};
+                  }
+                  if (!inputRefs.current[groupIndex][ruleIndex]) {
+                    inputRefs.current[groupIndex][ruleIndex] = [];
+                  }
+                  inputRefs.current[groupIndex][ruleIndex][1] = input; // Store second date input
+                }}
+                className="builder-input bg-white p-2 h-10 rounded-md grow"
+                value={inputValues[groupIndex][ruleIndex]?.[1] || ''}
+                onChange={(v) => {
+                  updateInput(
+                    [inputValues[groupIndex][ruleIndex]?.[0] || '', v.target.value],
+                    ruleIndex,
+                    groupIndex,
+                  );
+                }}
+              />
+            )}
+          </>
         )}
       {/* number input */}
       {property?.isNumber &&
