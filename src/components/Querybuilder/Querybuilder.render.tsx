@@ -428,11 +428,14 @@ const Querybuilder: FC<IQuerybuilderProps> = ({
             : selectedOperators[groupIndex][ruleIndex] === 'is null' ||
                 selectedOperators[groupIndex][ruleIndex] === 'is not null'
               ? ''
-              : selectedOperators[groupIndex][ruleIndex] === 'contains'
-                ? `"@${inputValues[groupIndex][ruleIndex]}@"`
-                : selectedOperators[groupIndex][ruleIndex] === 'end'
-                  ? `"@${inputValues[groupIndex][ruleIndex]}"`
-                  : `"${inputValues[groupIndex][ruleIndex]}"` || '';
+              : selectedOperators[groupIndex][ruleIndex] === 'is true' ||
+                  selectedOperators[groupIndex][ruleIndex] === 'is false'
+                ? ''
+                : selectedOperators[groupIndex][ruleIndex] === 'contains'
+                  ? `"@${inputValues[groupIndex][ruleIndex]}@"`
+                  : selectedOperators[groupIndex][ruleIndex] === 'end'
+                    ? `"@${inputValues[groupIndex][ruleIndex]}"`
+                    : `"${inputValues[groupIndex][ruleIndex]}"` || '';
         // between case ->2 inputs
         if (
           selectedOperators[groupIndex][ruleIndex] === 'between' &&
