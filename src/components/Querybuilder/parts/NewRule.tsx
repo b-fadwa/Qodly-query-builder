@@ -20,6 +20,8 @@ interface IQueryRuleProps {
   setRelatedAttributes: (att: any) => void;
   updateRelatedLabel: (v: string, ruleIndex: number, groupIndex: number) => void;
   relatedAttributes: any;
+  isCleared: boolean;
+  setIsCleared: (v: boolean) => void;
 }
 
 const NewRule: FC<IQueryRuleProps> = ({
@@ -41,6 +43,8 @@ const NewRule: FC<IQueryRuleProps> = ({
   setRelatedAttributes,
   updateRelatedLabel,
   relatedAttributes,
+  isCleared,
+  setIsCleared,
 }) => {
   const [property, setProperty] = useState<any>(); //if default exists else selected one setup
   const selectedKey =
@@ -70,6 +74,13 @@ const NewRule: FC<IQueryRuleProps> = ({
       setProperty(selectedProperty);
     }
   }, [defaultInput, selectedProperty]);
+
+  useEffect(() => {
+    if (isCleared) {
+      setProperty(null);
+    }
+    setIsCleared(false);
+  }, [isCleared]);
 
   //get related attributes of the selected related attribute..
   const handlePropertyChange = (v: any, ruleIndex: number, groupIndex: number) => {
@@ -267,6 +278,7 @@ const NewRule: FC<IQueryRuleProps> = ({
           <input
             type="text"
             placeholder="Value"
+            readOnly
             className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
           />
         )}

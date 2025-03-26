@@ -37,6 +37,8 @@ interface IQueryGroupProps {
   setRelatedAttributes: (att: any) => void;
   updateRelatedLabel: (v: string, ruleIndex: number, groupIndex: number) => void;
   relatedAttributes: any;
+  isCleared: boolean;
+  setIsCleared: (v: boolean) => void;
 }
 const NewGroup: FC<IQueryGroupProps> = ({
   defaultInputs,
@@ -72,6 +74,8 @@ const NewGroup: FC<IQueryGroupProps> = ({
   setRelatedAttributes,
   updateRelatedLabel,
   relatedAttributes,
+  isCleared,
+  setIsCleared,
 }) => {
   return (
     <>
@@ -196,6 +200,8 @@ const NewGroup: FC<IQueryGroupProps> = ({
                         setRelatedAttributes={setRelatedAttributes}
                         updateRelatedLabel={updateRelatedLabel}
                         relatedAttributes={relatedAttributes}
+                        isCleared={isCleared}
+                        setIsCleared={setIsCleared}
                       />
                       <button
                         className={cn(
@@ -236,6 +242,8 @@ const NewGroup: FC<IQueryGroupProps> = ({
                       setRelatedAttributes={setRelatedAttributes}
                       updateRelatedLabel={updateRelatedLabel}
                       relatedAttributes={relatedAttributes}
+                      isCleared={isCleared}
+                      setIsCleared={setIsCleared}
                     />
                     <button
                       className={cn(

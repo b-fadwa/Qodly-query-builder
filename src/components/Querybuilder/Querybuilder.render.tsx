@@ -46,6 +46,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({
   //default rules
   const [inputs, setInputs] = useState<any[]>([]);
   const [isNewRule, setIsNewRule] = useState<boolean>(false);
+  const [isCleared, setIsCleared] = useState<boolean>(false);
 
   const {
     sources: { datasource: ds },
@@ -329,6 +330,8 @@ const Querybuilder: FC<IQuerybuilderProps> = ({
       //fix to query cleaning
       setQuery(' ');
     }, 0);
+    setIsCleared(true);
+    setInputs([]);
   };
 
   const setAndOperator = (index: number) => {
@@ -536,6 +539,8 @@ const Querybuilder: FC<IQuerybuilderProps> = ({
                 setRelatedAttributes={setRelatedAttributes}
                 updateRelatedLabel={updateRelatedLabel}
                 relatedAttributes={relatedAttributes}
+                isCleared={isCleared}
+                setIsCleared={setIsCleared}
               />
             </div>
           ))}
