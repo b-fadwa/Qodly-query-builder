@@ -61,21 +61,33 @@ const NewRule: FC<IQueryRuleProps> = ({
     : null;
 
   useEffect(() => {
+    if (selectedProperty) {
+      setProperty(selectedProperty);
+      return;
+    }
     if (defaultInput) {
-      const selectedKeyFromInput = defaultInput.source;
+      const parts = defaultInput.source.split('.'); //case if relatedpath exists in dataAttributes ..
+      const selectedKeyFromInput = parts[0];
+      const relatedPropertyFromInput = parts[1];
       const propertyFromInput = allProperties.find(
         (prop: any) => prop.name === selectedKeyFromInput,
       );
+      //setting the first select
       if (propertyFromInput) {
         setProperty(propertyFromInput);
-        updateLabel(defaultInput.source, ruleIndex, groupIndex);
+        updateLabel(selectedKeyFromInput, ruleIndex, groupIndex);
         if (propertyFromInput.isRelated) {
-          handlePropertyChange({ target: { value: defaultInput.source } }, ruleIndex, groupIndex);
+          handlePropertyChange({ target: { value: selectedKeyFromInput } }, ruleIndex, groupIndex);
+        }
+        // If there's a related property, set it in the second select
+        if (relatedPropertyFromInput) {
+          updateRelatedLabel(
+            selectedKeyFromInput + '.' + relatedPropertyFromInput,
+            ruleIndex,
+            groupIndex,
+          );
         }
       }
-    }
-    if (selectedProperty) {
-      setProperty(selectedProperty);
     }
   }, [defaultInput, selectedProperty]);
 
@@ -125,11 +137,10 @@ const NewRule: FC<IQueryRuleProps> = ({
     setFocusedInput({ ruleIndex, groupIndex });
   };
 
-  const updateLabel = (v: string, ruleIndex: number, groupIndex: number) => {
+  const updateLabel = (v: any, ruleIndex: number, groupIndex: number) => {
     const updatedLabels = [...selectedLabels];
     updatedLabels[groupIndex][ruleIndex] = v;
     setSelectedLabels(updatedLabels);
-    updateFinalLabels(updatedLabels, selectedRelatedLabels);
   };
 
   const updateRelatedLabel = (v: string, ruleIndex: number, groupIndex: number) => {
@@ -139,10 +150,13 @@ const NewRule: FC<IQueryRuleProps> = ({
         updatedRelatedLabels[groupIndex] = [];
       }
       updatedRelatedLabels[groupIndex][ruleIndex] = v;
-      updateFinalLabels(updatedRelatedLabels, selectedRelatedLabels);
       return updatedRelatedLabels;
     });
   };
+
+  useEffect(() => {
+    updateFinalLabels(selectedLabels, selectedRelatedLabels);
+  }, [selectedLabels, selectedRelatedLabels]);
 
   //final labels(storage and related by rule)
   const updateFinalLabels = (updatedLabels: string[][], updatedRelatedLabels: string[][]) => {
