@@ -66,7 +66,7 @@ const NewRule: FC<IQueryRuleProps> = ({
     if (defaultInput) {
       const parts = defaultInput.source.split('.'); //case if relatedpath exists in dataAttributes ..
       const selectedKeyFromInput = parts[0];
-      const relatedPropertyFromInput = parts[1];
+      const relatedPropertyFromInput = parts.slice(1).join('.');
       const propertyFromInput = allProperties.find(
         (prop: any) => prop.name === selectedKeyFromInput,
       );
