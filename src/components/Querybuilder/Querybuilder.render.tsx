@@ -215,6 +215,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({
 
   const formQuery = () => {
     let formedQuery: string = '';
+    let wrongSyntax: boolean = false;
     groups.forEach((group, groupIndex) => {
       const groupQueries = group.rules.map((_, ruleIndex) => {
         const operator =
@@ -245,7 +246,19 @@ const Querybuilder: FC<IQuerybuilderProps> = ({
           inputValues[groupIndex][ruleIndex].length === 2
         ) {
           const [start, end] = inputValues[groupIndex][ruleIndex];
-          value = '<=' + start + ' AND ' + finalLabels[groupIndex][ruleIndex] + '>=' + end + '';
+          value = '<=' + start + ' and ' + finalLabels[groupIndex][ruleIndex] + '>=' + end + '';
+        }
+        //missing required fields => don't execute query (wrong query => infinite execution errors)
+        if (
+          selectedOperators[groupIndex][ruleIndex] === undefined ||
+          (selectedOperators &&
+            selectedOperators[groupIndex].length !== groups[groupIndex].rules.length) ||
+          inputValues[groupIndex] === undefined ||
+          finalLabels[groupIndex][ruleIndex] === undefined ||
+          (finalLabels && finalLabels[groupIndex].length !== groups[groupIndex].rules.length)
+        ) {
+          console.error('Missing required fields per rule');
+          wrongSyntax ||= true;
         }
         return {
           label: finalLabels[groupIndex][ruleIndex] || '',
@@ -259,8 +272,8 @@ const Querybuilder: FC<IQuerybuilderProps> = ({
         !isExceptActive[groupIndex] &&
         !isOrActive[groupIndex]
       ) {
+        wrongSyntax ||= true;
         console.error("Select an operator for the group's rules");
-        return;
       }
       groupQueries.forEach((queryPart, queryIndex) => {
         formedQuery += queryPart.label + ' ' + queryPart.operator + ' ' + queryPart.value;
@@ -283,7 +296,9 @@ const Querybuilder: FC<IQuerybuilderProps> = ({
             : ' ' + groupOperators[groupIndex] + ' ';
       }
     });
-    setQuery(formedQuery);
+    if (!wrongSyntax) {
+      setQuery(formedQuery);
+    }
   };
 
   useEffect(() => {
