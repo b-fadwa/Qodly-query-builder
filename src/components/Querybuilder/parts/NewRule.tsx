@@ -9,7 +9,6 @@ interface IQueryRuleProps {
   ruleIndex: any;
   groupIndex: any;
   selectedOperators: any;
-  updateOperator: (event: any, ruleIndex: any, groupIndex: any) => void;
   inputRefs: any;
   inputValues: any;
   allProperties: any;
@@ -23,6 +22,7 @@ interface IQueryRuleProps {
   setSelectedLabels: (v: any) => void;
   setSelectedRelatedLabels: (v: any) => void;
   setFinalLabels: (v: any) => void;
+  setSelectedOperators: (v: any) => void;
 }
 
 const NewRule: FC<IQueryRuleProps> = ({
@@ -33,7 +33,6 @@ const NewRule: FC<IQueryRuleProps> = ({
   ruleIndex,
   groupIndex,
   selectedOperators,
-  updateOperator,
   inputRefs,
   inputValues,
   allProperties,
@@ -47,6 +46,7 @@ const NewRule: FC<IQueryRuleProps> = ({
   setSelectedLabels,
   setSelectedRelatedLabels,
   setFinalLabels,
+  setSelectedOperators,
 }) => {
   const [property, setProperty] = useState<any>(); //if default exists else selected one setup
   const selectedKey =
@@ -126,13 +126,28 @@ const NewRule: FC<IQueryRuleProps> = ({
         return updated;
       });
     }
+    if (!selectedAttribute.isRelated) {
+      setRelatedAttributes((prev: any) => {
+        const updated = [...prev];
+        updated[groupIndex] = updated[groupIndex] || [];
+        updated[groupIndex][ruleIndex] = [];
+        return updated;
+      });
+      setProperty(selectedAttribute);
+      updateLabel(selectedAttribute.name, groupIndex, ruleIndex);
+      updateRelatedLabel('', groupIndex, ruleIndex);
+      updateOperator('', groupIndex, ruleIndex);
+      updateInput('', groupIndex, ruleIndex);
+    }
   };
 
   const updateInput = (v: any, ruleIndex: number, groupIndex: number) => {
     setInputValues((prevValues: any) => {
       const updatedValues = [...prevValues];
       updatedValues[groupIndex] = [...(updatedValues[groupIndex] || [])];
-      updatedValues[groupIndex][ruleIndex] = v;
+      v === ''
+        ? updatedValues[groupIndex].splice(ruleIndex, 1)
+        : (updatedValues[groupIndex][ruleIndex] = v);
       return updatedValues;
     });
 
@@ -154,9 +169,19 @@ const NewRule: FC<IQueryRuleProps> = ({
       if (!updatedRelatedLabels[groupIndex]) {
         updatedRelatedLabels[groupIndex] = [];
       }
-      updatedRelatedLabels[groupIndex][ruleIndex] = v;
+      v === ''
+        ? updatedRelatedLabels[groupIndex].splice(ruleIndex, 1)
+        : (updatedRelatedLabels[groupIndex][ruleIndex] = v);
       return updatedRelatedLabels;
     });
+  };
+
+  const updateOperator = (v: string, ruleIndex: number, groupIndex: number) => {
+    const updatedOperators = [...selectedOperators];
+    v === ''
+      ? updatedOperators[groupIndex].splice(ruleIndex, 1)
+      : (updatedOperators[groupIndex][ruleIndex] = v);
+    setSelectedOperators(updatedOperators);
   };
 
   useEffect(() => {
@@ -178,7 +203,7 @@ const NewRule: FC<IQueryRuleProps> = ({
     <div className={cn('builder-new-rule', 'w-full h-fit flex flex-row p-2 gap-6')}>
       {/* first select will all the attributes without recursion ..*/}
       <select
-        className="builder-input p-2 h-10 rounded-md grow"
+        className="builder-input p-2 h-10 rounded-md grow w-1/4"
         ref={labelSelect}
         value={selectedLabels?.[groupIndex]?.[ruleIndex] ?? ''}
         onChange={(v) => {
@@ -194,37 +219,38 @@ const NewRule: FC<IQueryRuleProps> = ({
         ))}
       </select>
       {/* get all properties of the related attribute */}
-      {(property?.isRelated || property?.name?.includes('.')) && (
-        <select
-          className="builder-input p-2 h-10 rounded-md grow"
-          ref={labelSelect}
-          value={selectedRelatedLabels?.[groupIndex]?.[ruleIndex] ?? ''}
-          onChange={(v) => {
-            updateRelatedLabel(v.target.value, ruleIndex, groupIndex);
-            handlePropertyChange(v, ruleIndex, groupIndex);
-          }}
-        >
-          <option value="" disabled selected>
-            Select a related property
-          </option>
-          {Array.isArray(relatedAttributes[groupIndex]?.[ruleIndex]) &&
-            (relatedAttributes[groupIndex]?.[ruleIndex]).map((attr: any) => {
-              //removing the prefix process
-              const baseName = attr.name.split('.').shift()
-                ? attr.name.replace(new RegExp(`^${attr.name.split('.').shift()}\.`), '')
-                : attr.name;
-              return (
-                <option key={attr.name} value={attr.name}>
-                  {baseName}
-                </option>
-              );
-            })}
-        </select>
-      )}
+      {(property?.isRelated || property?.name?.includes('.')) &&
+        relatedAttributes[groupIndex][ruleIndex].length > 0 && (
+          <select
+            className="builder-input p-2 h-10 rounded-md grow"
+            ref={labelSelect}
+            value={selectedRelatedLabels?.[groupIndex]?.[ruleIndex] ?? ''}
+            onChange={(v) => {
+              updateRelatedLabel(v.target.value, ruleIndex, groupIndex);
+              handlePropertyChange(v, ruleIndex, groupIndex);
+            }}
+          >
+            <option value="" disabled selected>
+              Select a related property
+            </option>
+            {Array.isArray(relatedAttributes[groupIndex]?.[ruleIndex]) &&
+              (relatedAttributes[groupIndex]?.[ruleIndex]).map((attr: any) => {
+                //removing the prefix process
+                const baseName = attr.name.split('.').shift()
+                  ? attr.name.replace(new RegExp(`^${attr.name.split('.').shift()}\.`), '')
+                  : attr.name;
+                return (
+                  <option key={attr.name} value={attr.name}>
+                    {baseName}
+                  </option>
+                );
+              })}
+          </select>
+        )}
       {/* {* handle each type operators */}
       {/* no property selected */}
       {!property && (
-        <select className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}>
+        <select className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow w-1/4')}>
           <option value="" disabled selected>
             Operator
           </option>
@@ -233,7 +259,7 @@ const NewRule: FC<IQueryRuleProps> = ({
       {/* image case */}
       {property?.isImage && (
         <select
-          className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
+          className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow w-1/4')}
           ref={operator}
           value={selectedOperators[groupIndex][ruleIndex] ?? ''}
           onChange={(v) => {
@@ -250,7 +276,7 @@ const NewRule: FC<IQueryRuleProps> = ({
       {/* string case */}
       {property?.isString && (
         <select
-          className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
+          className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow w-1/4')}
           ref={operator}
           value={selectedOperators[groupIndex][ruleIndex] ?? ''}
           onChange={(v) => {
@@ -272,7 +298,7 @@ const NewRule: FC<IQueryRuleProps> = ({
       {/* number case */}
       {property?.isNumber && (
         <select
-          className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
+          className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow w-1/4')}
           ref={operator}
           value={selectedOperators[groupIndex][ruleIndex] ?? ''}
           onChange={(v) => {
@@ -293,7 +319,7 @@ const NewRule: FC<IQueryRuleProps> = ({
       {/* date case */}
       {(property?.isDate || property?.isDuration) && (
         <select
-          className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
+          className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow w-1/4')}
           ref={operator}
           value={selectedOperators[groupIndex][ruleIndex] ?? ''}
           onChange={(v) => {
@@ -306,7 +332,9 @@ const NewRule: FC<IQueryRuleProps> = ({
           <option value="=">=</option>
           <option value="!=">!=</option>
           <option value="&lt;">&lt;</option>
+          <option value=">;=">&lt;=</option>
           <option value="&gt;">&gt;</option>
+          <option value="<=">&gt;=</option>
           <option value="between">between</option>
           <option value="is null">is null</option>
           <option value="is not null">is not null</option>
@@ -315,7 +343,7 @@ const NewRule: FC<IQueryRuleProps> = ({
       {/* boolean case */}
       {property?.isBoolean && (
         <select
-          className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
+          className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow w-1/4')}
           ref={operator}
           value={selectedOperators[groupIndex][ruleIndex] ?? ''}
           onChange={(v) => {
@@ -339,7 +367,7 @@ const NewRule: FC<IQueryRuleProps> = ({
             type="text"
             placeholder="Value"
             readOnly
-            className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
+            className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow w-1/4')}
           />
         )}
       {/* date input */}
@@ -359,7 +387,7 @@ const NewRule: FC<IQueryRuleProps> = ({
                 }
                 inputRefs.current[groupIndex][ruleIndex][0] = input; // Store first date input
               }}
-              className="builder-input bg-white p-2 h-10 rounded-md grow"
+              className="builder-input bg-white p-2 h-10 rounded-md grow w-1/4"
               value={inputValues[groupIndex][ruleIndex]?.[0] || ''}
               onChange={(v) => {
                 updateInput(
@@ -382,7 +410,7 @@ const NewRule: FC<IQueryRuleProps> = ({
                   }
                   inputRefs.current[groupIndex][ruleIndex][1] = input; // Store second date input
                 }}
-                className="builder-input bg-white p-2 h-10 rounded-md grow"
+                className="builder-input bg-white p-2 h-10 rounded-md grow w-1/4"
                 value={inputValues[groupIndex][ruleIndex]?.[1] || ''}
                 onChange={(v) => {
                   updateInput(
@@ -410,7 +438,7 @@ const NewRule: FC<IQueryRuleProps> = ({
                 }
                 inputRefs.current[groupIndex][ruleIndex] = input;
               }}
-              className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
+              className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow w-1/4')}
               value={inputValues[groupIndex][ruleIndex]?.[0] || ''}
               onChange={(v) => {
                 updateInput(
@@ -434,7 +462,7 @@ const NewRule: FC<IQueryRuleProps> = ({
                   }
                   inputRefs.current[groupIndex][ruleIndex][1] = input; // Store second date input
                 }}
-                className="builder-input bg-white p-2 h-10 rounded-md grow"
+                className="builder-input bg-white p-2 h-10 rounded-md grow w-1/4"
                 value={inputValues[groupIndex][ruleIndex]?.[1] || ''}
                 onChange={(v) => {
                   updateInput(
@@ -461,7 +489,7 @@ const NewRule: FC<IQueryRuleProps> = ({
               }
               inputRefs.current[groupIndex][ruleIndex] = input;
             }}
-            className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
+            className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow w-1/4')}
             value={inputValues[groupIndex][ruleIndex] ?? ''}
             onChange={(v) => {
               updateInput(v.target.value, ruleIndex, groupIndex);
@@ -481,7 +509,7 @@ const NewRule: FC<IQueryRuleProps> = ({
               }
               inputRefs.current[groupIndex][ruleIndex] = input;
             }}
-            className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
+            className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow w-1/4')}
             value={inputValues[groupIndex][ruleIndex] ?? ''}
             onChange={(v) => {
               updateInput(v.target.value, ruleIndex, groupIndex);

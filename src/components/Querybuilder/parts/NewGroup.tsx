@@ -211,12 +211,6 @@ const NewGroup: FC<IQueryGroupProps> = ({
     });
   };
 
-  const updateOperator = (v: string, ruleIndex: number, groupIndex: number) => {
-    const updatedOperators = [...selectedOperators];
-    updatedOperators[groupIndex][ruleIndex] = v;
-    setSelectedOperators(updatedOperators);
-  };
-
   const generateGroup = () => {
     setGroups([...groups, { rules: [{}] }]); //generate a new group with a first rule
     setSelectedLabels((prevLabels: any) => [...prevLabels, []]);
@@ -351,7 +345,6 @@ const NewGroup: FC<IQueryGroupProps> = ({
                         groupIndex={index}
                         ruleIndex={inputIndex}
                         selectedOperators={selectedOperators}
-                        updateOperator={updateOperator}
                         inputRefs={inputRefs}
                         inputValues={inputValues}
                         setInputValues={setInputValues}
@@ -365,6 +358,7 @@ const NewGroup: FC<IQueryGroupProps> = ({
                         setSelectedLabels={setSelectedLabels}
                         setSelectedRelatedLabels={setSelectedRelatedLabels}
                         setFinalLabels={setFinalLabels}
+                        setSelectedOperators={setSelectedOperators}
                       />
                       <button
                         className={cn(
@@ -394,7 +388,6 @@ const NewGroup: FC<IQueryGroupProps> = ({
                       groupIndex={index}
                       ruleIndex={ruleIndex}
                       selectedOperators={selectedOperators}
-                      updateOperator={updateOperator}
                       inputRefs={inputRefs}
                       inputValues={inputValues}
                       setInputValues={setInputValues}
@@ -408,6 +401,7 @@ const NewGroup: FC<IQueryGroupProps> = ({
                       setSelectedLabels={setSelectedLabels}
                       setSelectedRelatedLabels={setSelectedRelatedLabels}
                       setFinalLabels={setFinalLabels}
+                      setSelectedOperators={setSelectedOperators}
                     />
                     <button
                       className={cn(
