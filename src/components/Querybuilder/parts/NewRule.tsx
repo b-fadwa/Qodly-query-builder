@@ -49,8 +49,6 @@ const NewRule: FC<IQueryRuleProps> = ({
   setFinalLabels,
 }) => {
   const [property, setProperty] = useState<any>(); //if default exists else selected one setup
-  const [focusedInput, setFocusedInput] = useState({ groupIndex: 0, ruleIndex: 0 });
-
   const selectedKey =
     selectedRelatedLabels?.[groupIndex]?.[ruleIndex] !== undefined
       ? selectedRelatedLabels[groupIndex][ruleIndex]
@@ -131,10 +129,17 @@ const NewRule: FC<IQueryRuleProps> = ({
   };
 
   const updateInput = (v: any, ruleIndex: number, groupIndex: number) => {
-    const updatedValues = [...inputValues];
-    updatedValues[groupIndex][ruleIndex] = v;
-    setInputValues(updatedValues);
-    setFocusedInput({ ruleIndex, groupIndex });
+    setInputValues((prevValues: any) => {
+      const updatedValues = [...prevValues];
+      updatedValues[groupIndex] = [...(updatedValues[groupIndex] || [])];
+      updatedValues[groupIndex][ruleIndex] = v;
+      return updatedValues;
+    });
+
+    const input = inputRefs.current[groupIndex]?.[ruleIndex];
+    if (input) {
+      Array.isArray(input) ? input[0]?.focus() : input?.focus();
+    }
   };
 
   const updateLabel = (v: any, ruleIndex: number, groupIndex: number) => {
@@ -168,14 +173,6 @@ const NewRule: FC<IQueryRuleProps> = ({
     });
     setFinalLabels(updatedFinalLabels);
   };
-
-  useEffect(() => {
-    //fix for the input text issue when loosing focus at each rerender
-    if (focusedInput.groupIndex != null && focusedInput.ruleIndex != null && inputRefs?.current) {
-      const input = inputRefs.current[focusedInput.groupIndex]?.[focusedInput.ruleIndex];
-      Array.isArray(input) ? input[0]?.focus() : input?.focus();
-    }
-  }, [inputValues]);
 
   return (
     <div className={cn('builder-new-rule', 'w-full h-fit flex flex-row p-2 gap-6')}>
