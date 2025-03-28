@@ -12,6 +12,12 @@ The query builder custom component will allow you to retrieve data by building a
 | ----------- | ---------------- | -------- | ------------------------------------------------------------------------- |
 | Qodlysource | Entity selection | Yes      | Will contain the selection on which the constructed query will be applied |
 
+## Properties
+
+| Name       | Type  | Required | Description                                                                                         |
+| ---------- | ----- | -------- | --------------------------------------------------------------------------------------------------- |
+| Properties | array | No       | Will contain the default qodlysource attributes to be displayed in the query builder from the start |
+
 ### Custom Css
 
 Below, is a css class sample containing all the customisable parts of the query builder component:

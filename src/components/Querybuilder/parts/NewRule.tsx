@@ -106,7 +106,8 @@ const NewRule: FC<IQueryRuleProps> = ({
         .filter(
           (attr: any) =>
             attr.name.startsWith(selectedAttribute.name + '.') &&
-            attr.name !== selectedAttribute.name,
+            attr.name !== selectedAttribute.name &&
+            !attr.isRelated,
         )
         .map((attr: any) => ({
           name: attr.name,
