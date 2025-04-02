@@ -59,7 +59,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
       isNumber: item.type === 'long',
       isBoolean: item.type === 'bool',
       isDuration: item.type === 'duration',
-      isRelated: item.kind === 'relatedEntities',
+      isRelated: item.kind === 'relatedEntities' || item.kind === 'relatedEntity',
     }));
 
     const combinedProperties: any[] = [];
@@ -71,10 +71,13 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
         const uniquePath = dataClassName + item.name;
         if (
           (item.kind === 'relatedEntities' ||
+            item.kind === 'relatedEntity' ||
             (item.kind === 'calculated' && item.behavior === 'relatedEntities')) &&
           depth < 5
         ) {
-          const dataType = item.type.replace('Selection', '');
+          const dataType = item.type.includes('Selection')
+            ? item.type.replace('Selection', '')
+            : item.type;
           if (processedEntities.has(uniquePath)) return;
           processedEntities.add(uniquePath);
           // Get related entity attributes
@@ -86,7 +89,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
             name: uniquePath,
             kind: item.kind,
             type: item.type,
-            isRelated: item.kind === 'relatedEntities',
+            isRelated: item.kind === 'relatedEntities' || item.kind === 'relatedEntity',
           });
           relatedEntityAttributes.forEach((attr: any) => {
             if (attr.kind === 'storage' && !processedEntities.has(uniquePath + '.' + attr.name)) {
@@ -100,7 +103,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
                 isNumber: attr.type === 'long',
                 isBoolean: attr.type === 'bool',
                 isDuration: attr.type === 'duration',
-                isRelated: attr.kind === 'relatedEntities',
+                isRelated: attr.kind === 'relatedEntities' || attr.kind === 'relatedEntity',
               });
               processedEntities.add(uniquePath + '.' + attr.name); // Mark this attribute as processed
             }
@@ -119,7 +122,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
             isNumber: item.type === 'long',
             isBoolean: item.type === 'bool',
             isDuration: item.type === 'duration',
-            isRelated: item.kind === 'relatedEntities',
+            isRelated: item.kind === 'relatedEntities' || item.kind === 'relatedEntity',
           });
           processedEntities.add(uniquePath);
         }
@@ -128,6 +131,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
     const topLevelAttributes = Object.values(ds.dataclass.getAllAttributes()).filter(
       (item) =>
         item.kind === 'relatedEntities' ||
+        item.kind === 'relatedEntity' ||
         (item.kind === 'calculated' && item.behavior === 'relatedEntities'),
     );
     processAttributes(topLevelAttributes, '');
