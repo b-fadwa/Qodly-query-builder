@@ -4,7 +4,7 @@ import { BASIC_SETTINGS, DEFAULT_SETTINGS, load } from '@ws-ui/webform-editor';
 const commonSettings: TSetting[] = [
   {
     type: ESetting.DATAGRID,
-    key: 'dataAttributes',
+    key: 'columns',
     label: 'Properties',
     titleProperty: 'title',
     data: [

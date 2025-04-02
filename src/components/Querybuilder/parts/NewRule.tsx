@@ -223,7 +223,7 @@ const NewRule: FC<IQueryRuleProps> = ({
       {(property?.isRelated || property?.name?.includes('.')) &&
         relatedAttributes[groupIndex][ruleIndex].length > 0 && (
           <select
-            className="builder-input p-2 h-10 rounded-md grow"
+            className="builder-input p-2 h-10 rounded-md grow w-1/4"
             ref={labelSelect}
             value={selectedRelatedLabels?.[groupIndex]?.[ruleIndex] ?? ''}
             onChange={(v) => {

@@ -4,12 +4,7 @@ import { FC, useEffect, useRef, useState } from 'react';
 
 import { IQuerybuilderProps } from './Querybuilder.config';
 import NewGroup from './parts/NewGroup';
-const Querybuilder: FC<IQuerybuilderProps> = ({
-  dataAttributes,
-  style,
-  className,
-  classNames = [],
-}) => {
+const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, classNames = [] }) => {
   const { connect } = useRenderer();
   const [groups, setGroups] = useState([{ rules: [{}] }]);
   //query properties states
@@ -148,9 +143,9 @@ const Querybuilder: FC<IQuerybuilderProps> = ({
 
   useEffect(() => {
     // If ds is loaded and allProperties are set
-    if (allProperties.length > 0 && dataAttributes && dataAttributes.length > 0) {
+    if (allProperties.length > 0 && columns && columns.length > 0) {
       const updatedInputs: any[] = [];
-      dataAttributes.forEach((entry: any) => {
+      columns.forEach((entry: any) => {
         if (!entry.source) {
           // nothing's written
           console.error('Empty source in properties !');
@@ -187,7 +182,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({
         ]);
       }
     }
-  }, [dataAttributes, allProperties]);
+  }, [columns, allProperties]);
 
   const clearBuilder = () => {
     setGroups([{ rules: [{}] }]);

@@ -2,7 +2,7 @@
   "app_id": "qodly_a0802e670d18cb83778a",
   "name": "query-builder",
   "private": true,
-  "version": "0.1.2",
+  "version": "0.2.0",
   "type": "module",
   "author": {
     "name": "Qodly Team",
@@ -20,12 +20,12 @@
     "@ws-ui/craftjs-core": "^0.2.14",
     "@ws-ui/craftjs-layers": "^0.2.2",
     "@ws-ui/craftjs-utils": "^0.2.1",
-    "@ws-ui/webform-editor": "0.3.36",
+    "@ws-ui/webform-editor": "0.4.13",
     "react": "^17.0.2",
     "react-dom": "^17.0.2"
   },
   "devDependencies": {
-    "@qodly/cli": "^0.2.17",
+    "@qodly/cli": "^0.3.1",
     "@types/react": "^18.2.48",
     "@types/react-dom": "^18.2.18",
     "@typescript-eslint/eslint-plugin": "^6.20.0",
@@ -38,6 +38,6 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.3.3",
-    "vite": "^5.0.12"
+    "vite": "^6.2.2"
   }
 }
