@@ -87,6 +87,7 @@ export default {
     },
   },
   defaultProps: {
+    iterable: true,
     style: {
       width: '100%',
     },
