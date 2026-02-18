@@ -1,7 +1,7 @@
-import { useDataLoader, useRenderer, useSources } from '@ws-ui/webform-editor';
+import { selectResolver, useDataLoader, useEnhancedEditor, useRenderer, useSources } from '@ws-ui/webform-editor';
 import cn from 'classnames';
 import { FC, useEffect, useRef, useState } from 'react';
-
+import { Element } from '@ws-ui/craftjs-core';
 import { IQuerybuilderProps } from './Querybuilder.config';
 import NewGroup from './parts/NewGroup';
 const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, classNames = [] }) => {
@@ -45,6 +45,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
   const { fetchIndex } = useDataLoader({
     source: ds,
   });
+  const { resolver } = useEnhancedEditor(selectResolver);
 
   useEffect(() => {
     if (!ds) return;
@@ -381,19 +382,24 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
         </div>
         <div
           className={cn('builder-footer', 'w-full flex flex-row justify-end')}
-          onClick={() => formQuery()}
         >
           <div className="flex gap-1 h-10 w-1/6">
-            <button
-              className={cn(
-                'builder-clear',
-                'rounded-md border-2 border-purple-400 bg-white w-1/2',
-              )}
-              onClick={() => clearBuilder()}
-            >
-              Clear
-            </button>
-            <button className={cn('builder-apply', 'rounded-md bg-purple-400 w-1/2')}>Apply</button>
+            <div className="grow flex" onClick={() => clearBuilder()}>
+              <Element
+                id="builder-clear"
+                is={resolver.Button}
+                text="Clear"
+                classNames={['builder-clear rounded-md border-2 border-purple-400 text-purple-400 bg-white grow w-full !important']}
+              />
+            </div>
+            <div className="grow flex" onClick={() => formQuery()} >
+              <Element
+                id="builder-apply"
+                is={resolver.Button}
+                text="Apply"
+                classNames={['grow builder-apply rounded-md bg-purple-400 w-full  !important']}
+              />
+            </div>
           </div>
         </div>
       </div>

@@ -120,20 +120,25 @@ const NewRule: FC<IQueryRuleProps> = ({
           isBoolean: attr.isBoolean,
         }));
 
-      setRelatedAttributes((prev: any) => {
-        const updated = [...prev];
-        updated[groupIndex] = updated[groupIndex] || [];
-        updated[groupIndex][ruleIndex] = relatedEntityAttributes;
-        return updated;
-      });
-    }
-    if (!selectedAttribute.isRelated) {
-      setRelatedAttributes((prev: any) => {
-        const updated = [...prev];
-        updated[groupIndex] = updated[groupIndex] || [];
-        updated[groupIndex][ruleIndex] = [];
-        return updated;
-      });
+      setRelatedAttributes((prev: any) =>
+        prev.map((group: any, gIndex: number) => {
+          if (gIndex !== groupIndex) return group;
+
+          const updatedGroup = [...(group || [])];
+          updatedGroup[ruleIndex] = relatedEntityAttributes;
+          return updatedGroup;
+        })
+      );
+      setRelatedAttributes((prev: any) =>
+        prev.map((group: any, gIndex: number) => {
+          if (gIndex !== groupIndex) return group;
+
+          const updatedGroup = [...(group || [])];
+          updatedGroup[ruleIndex] = [];
+          return updatedGroup;
+        })
+      );
+
       setProperty(selectedAttribute);
       updateLabel(selectedAttribute.name, groupIndex, ruleIndex);
       updateRelatedLabel('', groupIndex, ruleIndex);
@@ -159,9 +164,15 @@ const NewRule: FC<IQueryRuleProps> = ({
   };
 
   const updateLabel = (v: any, ruleIndex: number, groupIndex: number) => {
-    const updatedLabels = [...selectedLabels];
-    updatedLabels[groupIndex][ruleIndex] = v;
-    setSelectedLabels(updatedLabels);
+    setSelectedLabels((prev: any) =>
+      prev.map((group: any, gIndex: number) => {
+        if (gIndex !== groupIndex) return group;
+
+        const updatedGroup = [...(group || [])];
+        updatedGroup[ruleIndex] = v;
+        return updatedGroup;
+      })
+    );
   };
 
   const updateRelatedLabel = (v: string, ruleIndex: number, groupIndex: number) => {
@@ -178,11 +189,20 @@ const NewRule: FC<IQueryRuleProps> = ({
   };
 
   const updateOperator = (v: string, ruleIndex: number, groupIndex: number) => {
-    const updatedOperators = [...selectedOperators];
-    v === ''
-      ? updatedOperators[groupIndex].splice(ruleIndex, 1)
-      : (updatedOperators[groupIndex][ruleIndex] = v);
-    setSelectedOperators(updatedOperators);
+    setSelectedOperators((prev: any) =>
+      prev.map((group: any, gIndex: number) => {
+        if (gIndex !== groupIndex) return group;
+
+        const updatedGroup = [...(group || [])];
+        if (v === '') {
+          updatedGroup.splice(ruleIndex, 1);
+        } else {
+          updatedGroup[ruleIndex] = v;
+        }
+
+        return updatedGroup;
+      })
+    );
   };
 
   useEffect(() => {
@@ -212,7 +232,7 @@ const NewRule: FC<IQueryRuleProps> = ({
           handlePropertyChange(v, ruleIndex, groupIndex);
         }}
       >
-        <option value="" disabled selected>
+        <option value="" disabled>
           Select a property
         </option>
         {properties.map((attribute: any) => (
@@ -231,7 +251,7 @@ const NewRule: FC<IQueryRuleProps> = ({
               handlePropertyChange(v, ruleIndex, groupIndex);
             }}
           >
-            <option value="" disabled selected>
+            <option value="" disabled>
               Select a related property
             </option>
             {Array.isArray(relatedAttributes[groupIndex]?.[ruleIndex]) &&
@@ -252,7 +272,7 @@ const NewRule: FC<IQueryRuleProps> = ({
       {/* no property selected */}
       {!property && (
         <select className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow w-1/4')}>
-          <option value="" disabled selected>
+          <option value="" disabled>
             Operator
           </option>
         </select>
@@ -267,7 +287,7 @@ const NewRule: FC<IQueryRuleProps> = ({
             updateOperator(v.target.value, ruleIndex, groupIndex);
           }}
         >
-          <option value="" disabled selected>
+          <option value="" disabled >
             Operator
           </option>
           <option value="is null">Is null</option>
@@ -284,7 +304,7 @@ const NewRule: FC<IQueryRuleProps> = ({
             updateOperator(v.target.value, ruleIndex, groupIndex);
           }}
         >
-          <option value="" disabled selected>
+          <option value="" disabled>
             Operator
           </option>
           <option value="=">=</option>
@@ -306,7 +326,7 @@ const NewRule: FC<IQueryRuleProps> = ({
             updateOperator(v.target.value, ruleIndex, groupIndex);
           }}
         >
-          <option value="" disabled selected>
+          <option value="" disabled>
             Operator
           </option>
           <option value="=">=</option>
@@ -327,7 +347,7 @@ const NewRule: FC<IQueryRuleProps> = ({
             updateOperator(v.target.value, ruleIndex, groupIndex);
           }}
         >
-          <option value="" disabled selected>
+          <option value="" disabled>
             Operator
           </option>
           <option value="=">=</option>
@@ -351,7 +371,7 @@ const NewRule: FC<IQueryRuleProps> = ({
             updateOperator(v.target.value, ruleIndex, groupIndex);
           }}
         >
-          <option value="" disabled selected>
+          <option value="" disabled>
             Operator
           </option>
           <option value="is true">is true</option>

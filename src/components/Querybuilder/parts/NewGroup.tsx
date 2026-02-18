@@ -2,6 +2,8 @@ import { FC, useState } from 'react';
 import cn from 'classnames';
 import NewRule from './NewRule';
 import { FaRegTrashAlt } from 'react-icons/fa';
+import { selectResolver, useEnhancedEditor } from '@ws-ui/webform-editor';
+import { Element } from '@ws-ui/craftjs-core';
 
 interface IQueryGroupProps {
   setGroups: (v: any) => void;
@@ -89,6 +91,7 @@ const NewGroup: FC<IQueryGroupProps> = ({
   const [isOr, setOr] = useState<boolean>(false);
   const [isExcept, setExcept] = useState<boolean>(false);
   const [isNewRule, setIsNewRule] = useState<boolean>(false);
+  const { resolver } = useEnhancedEditor(selectResolver);
 
   const setAndOperator = (index: number) => {
     setOr(isAnd);
@@ -224,15 +227,28 @@ const NewGroup: FC<IQueryGroupProps> = ({
       updatedGroups[groupIndex] = {
         //add a new rule to the selected group after creating a copy of it to return old rules too
         ...updatedGroups[groupIndex],
-        rules: [...updatedGroups[groupIndex].rules, {}], // Append a new rule to th
+        rules: [...updatedGroups[groupIndex].rules, {}], // Append a new rule to the selected group
       };
       return updatedGroups;
     });
     setIsNewRule(true);
-    setSelectedLabels((prevLabels: any) => [...prevLabels, []]);
-    setSelectedOperators((prevOperators: any) => [...prevOperators, []]);
-    setInputValues((prevInputs: any) => [...prevInputs, []]);
+    setSelectedLabels((prev: any) =>
+      prev.map((group: any, i: number) =>
+        i === groupIndex ? [...group, null] : group
+      )
+    );
+    setSelectedOperators((prev: any) =>
+      prev.map((group: any, i: number) =>
+        i === groupIndex ? [...group, null] : group
+      )
+    );
+    setInputValues((prev: any) =>
+      prev.map((group: any, i: number) =>
+        i === groupIndex ? [...group, null] : group
+      )
+    );
   };
+
   return (
     <>
       {groups[index] && groups[index].rules && groups[index].rules.length > 0 && (
@@ -243,9 +259,9 @@ const NewGroup: FC<IQueryGroupProps> = ({
                 className={
                   isAndGroupActive[index]
                     ? cn(
-                        'builder-and-group',
-                        'grow rounded-md border-2  border-purple-400 bg-white',
-                      )
+                      'builder-and-group',
+                      'grow rounded-md border-2  border-purple-400 bg-white',
+                    )
                     : cn('builder-and-group', ' grow rounded-md border-2 bg-purple-400')
                 }
                 onClick={() => setGroupAndOperator(index)}
@@ -293,9 +309,9 @@ const NewGroup: FC<IQueryGroupProps> = ({
                     isOrActive[index]
                       ? cn('builder-or', 'grow rounded-md  border-2 bg-purple-400')
                       : cn(
-                          'builder-or',
-                          'grow rounded-md border-2 border-purple-400 bg-white hover:bg-sky-700',
-                        )
+                        'builder-or',
+                        'grow rounded-md border-2 border-purple-400 bg-white hover:bg-sky-700',
+                      )
                   }
                   onClick={() => {
                     setOrOperator(index);
@@ -317,18 +333,22 @@ const NewGroup: FC<IQueryGroupProps> = ({
                 </button>
               </div>
               <div className="flex flex-row justify-start gap-1 w-1/6 h-10">
-                <button
-                  className={cn('builder-rule', 'grow rounded-md bg-purple-400 w-1/2')}
-                  onClick={() => generateRule(index)}
-                >
-                  + Rule
-                </button>
-                <button
-                  className={cn('builder-group', 'grow rounded-md bg-purple-400 w-1/2')}
-                  onClick={generateGroup}
-                >
-                  + Group
-                </button>
+                <div className="grow" onClick={() => generateRule(index)} >
+                  <Element
+                    id="builder-rule"
+                    is={resolver.Button}
+                    text="+ Rule"
+                    classNames={["builder-rule rounded-md bg-purple-400 w-full min-h-10 h-10 !important"]}
+                  />
+                </div>
+                <div className="grow" onClick={() => generateGroup()}>
+                  <Element
+                    id="builder-group"
+                    is={resolver.Button}
+                    text="+ Group"
+                    classNames={["builder-group min-w-fit rounded-md bg-purple-400 w-full min-h-10 h-10 !important"]}
+                  />
+                </div>
               </div>
             </div>
             <div className={cn('builder-body', 'flex flex-col grow p-2')}>

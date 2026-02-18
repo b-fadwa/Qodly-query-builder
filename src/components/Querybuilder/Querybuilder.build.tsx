@@ -1,6 +1,7 @@
-import { useEnhancedNode } from '@ws-ui/webform-editor';
+import { selectResolver, useEnhancedEditor, useEnhancedNode } from '@ws-ui/webform-editor';
 import cn from 'classnames';
 import { FC } from 'react';
+import { Element } from '@ws-ui/craftjs-core';
 
 import { IQuerybuilderProps } from './Querybuilder.config';
 import { FaRegTrashAlt } from 'react-icons/fa';
@@ -9,6 +10,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
   const {
     connectors: { connect },
   } = useEnhancedNode();
+  const { resolver } = useEnhancedEditor(selectResolver);
 
   return (
     <div ref={connect} style={style} className={cn(className, classNames)}>
@@ -42,12 +44,18 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
             </button>
           </div>
           <div className="flex flex-row justify-start gap-1 w-1/6 h-10">
-            <button className={cn('builder-rule', 'grow rounded-md bg-purple-400 w-1/2')}>
-              + Rule
-            </button>
-            <button className={cn('builder-group', 'grow rounded-md bg-purple-400 w-1/2')}>
-              + Group
-            </button>
+            <Element
+              id="builder-rule"
+              is={resolver.Button}
+              text="+ Rule"
+              classNames={["builder-rule min-h-10 grow rounded-md bg-purple-400 h-10 w-full !important"]}
+            />
+            <Element
+              id="builder-group"
+              is={resolver.Button}
+              text="+ Group"
+              classNames={["builder-group min-h-10 grow min-w-fit rounded-md bg-purple-400 h-10 w-full !important"]}
+            />
           </div>
         </div>
         <div className={cn('builder-body', 'flex flex-col grow p-2')}>
@@ -77,15 +85,18 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
         </div>
         <div className={cn('builder-footer', 'w-full flex flex-row justify-end')}>
           <div className="flex gap-1 h-10 w-1/6">
-            <button
-              className={cn(
-                'builder-clear',
-                'rounded-md border-2 border-purple-400 bg-white w-1/2',
-              )}
-            >
-              Clear
-            </button>
-            <button className={cn('builder-apply', 'rounded-md bg-purple-400 w-1/2')}>Apply</button>
+            <Element
+              id="builder-clear"
+              is={resolver.Button}
+              text="Clear"
+              classNames={['builder-clear rounded-md border-2 border-purple-400 text-purple-400 bg-white grow w-full !important']}
+            />
+            <Element
+              id="builder-apply"
+              is={resolver.Button}
+              text="Apply"
+              classNames={[' builder-apply rounded-md bg-purple-400 w-full grow !important']}
+            />
           </div>
         </div>
       </div>
