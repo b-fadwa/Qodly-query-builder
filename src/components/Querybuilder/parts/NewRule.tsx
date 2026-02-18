@@ -237,7 +237,7 @@ const NewRule: FC<IQueryRuleProps> = ({
         }}
       >
         <option value="" disabled>
-          Select a property
+          {translation("Select a property")}
         </option>
         {properties.map((attribute: any) => (
           <option value={attribute.name}>{translation(attribute.name)}</option>
@@ -256,7 +256,7 @@ const NewRule: FC<IQueryRuleProps> = ({
             }}
           >
             <option value="" disabled>
-              Select a related property
+              {translation("Select a related property")}
             </option>
             {Array.isArray(relatedAttributes[groupIndex]?.[ruleIndex]) &&
               (relatedAttributes[groupIndex]?.[ruleIndex]).map((attr: any) => {
@@ -277,7 +277,7 @@ const NewRule: FC<IQueryRuleProps> = ({
       {!property && (
         <select className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow w-1/4')}>
           <option value="" disabled>
-            Operator
+            {translation("Operator")}
           </option>
         </select>
       )}
@@ -292,10 +292,10 @@ const NewRule: FC<IQueryRuleProps> = ({
           }}
         >
           <option value="" disabled >
-            Operator
+            {translation("Operator")}
           </option>
-          <option value="is null">Is null</option>
-          <option value="is not null">is not null</option>
+          <option value="is null">{translation("Is null")}</option>
+          <option value="is not null">{translation("is not null")}</option>
         </select>
       )}
       {/* string case */}
@@ -309,15 +309,15 @@ const NewRule: FC<IQueryRuleProps> = ({
           }}
         >
           <option value="" disabled>
-            Operator
+            {translation("Operator")}
           </option>
           <option value="=">=</option>
           <option value="!=">!=</option>
-          <option value="contains">contains</option>
-          <option value="begin">Starts with</option>
-          <option value="end">Ends with</option>
-          <option value="is null">is null</option>
-          <option value="is not null">is not null</option>
+          <option value="contains">{translation("contains")}</option>
+          <option value="begin">{translation("Starts with")}</option>
+          <option value="end">{translation("Ends with")}</option>
+          <option value="is null">{translation("is null")}</option>
+          <option value="is not null">{translation("is not null")}</option>
         </select>
       )}
       {/* number case */}
@@ -331,7 +331,7 @@ const NewRule: FC<IQueryRuleProps> = ({
           }}
         >
           <option value="" disabled>
-            Operator
+            {translation("Operator")}
           </option>
           <option value="=">=</option>
           <option value="!=">!=</option>
@@ -352,7 +352,7 @@ const NewRule: FC<IQueryRuleProps> = ({
           }}
         >
           <option value="" disabled>
-            Operator
+            {translation("Operator")}
           </option>
           <option value="=">=</option>
           <option value="!=">!=</option>
@@ -360,9 +360,9 @@ const NewRule: FC<IQueryRuleProps> = ({
           <option value=">;=">&lt;=</option>
           <option value="&gt;">&gt;</option>
           <option value="<=">&gt;=</option>
-          <option value="between">between</option>
-          <option value="is null">is null</option>
-          <option value="is not null">is not null</option>
+          <option value="between">{translation("between")}</option>
+          <option value="is null">{translation("is null")}</option>
+          <option value="is not null">{translation("is not null")}</option>
         </select>
       )}
       {/* boolean case */}
@@ -376,11 +376,11 @@ const NewRule: FC<IQueryRuleProps> = ({
           }}
         >
           <option value="" disabled>
-            Operator
+            {translation("Operator")}
           </option>
-          <option value="is true">is true</option>
-          <option value="is false">is false</option>
-          <option value="is null">is null</option>
+          <option value="is true">{translation("is true")}</option>
+          <option value="is false">{translation("is false")}</option>
+          <option value="is null">{translation("is null")}</option>
         </select>
       )}
       {/* handle each type inputs */}
@@ -390,7 +390,7 @@ const NewRule: FC<IQueryRuleProps> = ({
         selectedOperators[groupIndex][ruleIndex] !== 'is not null' && (
           <input
             type="text"
-            placeholder="Value"
+            placeholder={translation("Value")}
             readOnly
             className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow w-1/4')}
           />
@@ -402,7 +402,7 @@ const NewRule: FC<IQueryRuleProps> = ({
           <>
             <input
               type="date"
-              placeholder="Value"
+              placeholder={translation("Value")}
               ref={(input) => {
                 if (!inputRefs.current[groupIndex]) {
                   inputRefs.current[groupIndex] = {};
@@ -425,7 +425,7 @@ const NewRule: FC<IQueryRuleProps> = ({
             {selectedOperators[groupIndex][ruleIndex] === 'between' && (
               <input
                 type="date"
-                placeholder="Value"
+                placeholder={translation("Value")}
                 ref={(input) => {
                   if (!inputRefs.current[groupIndex]) {
                     inputRefs.current[groupIndex] = {};
@@ -456,7 +456,7 @@ const NewRule: FC<IQueryRuleProps> = ({
             <input
               type="time"
               step="60"
-              placeholder="Value"
+              placeholder={translation("Value")}
               ref={(input) => {
                 if (!inputRefs.current[groupIndex]) {
                   inputRefs.current[groupIndex] = {};
@@ -477,7 +477,7 @@ const NewRule: FC<IQueryRuleProps> = ({
               <input
                 type="time"
                 step="60"
-                placeholder="Value"
+                placeholder={translation("Value")}
                 ref={(input) => {
                   if (!inputRefs.current[groupIndex]) {
                     inputRefs.current[groupIndex] = {};
@@ -507,7 +507,7 @@ const NewRule: FC<IQueryRuleProps> = ({
           <input
             type="number"
             min={0}
-            placeholder="Value"
+            placeholder={translation("Value")}
             ref={(input) => {
               if (!inputRefs.current[groupIndex]) {
                 inputRefs.current[groupIndex] = {};
@@ -527,7 +527,7 @@ const NewRule: FC<IQueryRuleProps> = ({
         selectedOperators[groupIndex][ruleIndex] !== 'is not null' && (
           <input
             type="text"
-            placeholder="Value"
+            placeholder={translation("Value")}
             ref={(input) => {
               if (!inputRefs.current[groupIndex]) {
                 inputRefs.current[groupIndex] = {};

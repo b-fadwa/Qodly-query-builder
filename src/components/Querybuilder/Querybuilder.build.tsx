@@ -1,16 +1,21 @@
-import { selectResolver, useEnhancedEditor, useEnhancedNode } from '@ws-ui/webform-editor';
+import { selectResolver, useEnhancedEditor, useEnhancedNode, useI18n, useLocalization } from '@ws-ui/webform-editor';
 import cn from 'classnames';
 import { FC } from 'react';
 import { Element } from '@ws-ui/craftjs-core';
 
 import { IQuerybuilderProps } from './Querybuilder.config';
 import { FaRegTrashAlt } from 'react-icons/fa';
+import { get } from 'lodash';
 
 const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [] }) => {
   const {
     connectors: { connect },
   } = useEnhancedNode();
   const { resolver } = useEnhancedEditor(selectResolver);
+
+  const { i18n } = useI18n();
+  const { selected: lang } = useLocalization();
+  const translation = (key: string) => get(i18n, `keys.${key}.${lang}`, get(i18n, `keys.${key}.default`, key));
 
   return (
     <div ref={connect} style={style} className={cn(className, classNames)}>
@@ -27,12 +32,12 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
             <button
               className={cn('builder-and', 'grow rounded-md border-2 border-purple-400 bg-white ')}
             >
-              And
+              {translation("And")}
             </button>
             <button
               className={cn('builder-or', 'grow rounded-md border-2 border-purple-400 bg-white')}
             >
-              Or
+              {translation("Or")}
             </button>
             <button
               className={cn(
@@ -40,7 +45,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
                 'grow rounded-md border-2 border-purple-400 bg-white',
               )}
             >
-              Except
+              {translation("Except")}
             </button>
           </div>
           <div className="flex flex-row justify-start gap-1 w-1/6 h-10">
@@ -62,15 +67,15 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
           <div className={cn('builder-rule-line', 'w-full h-fit flex flex-row p-2 gap-6')}>
             <input
               type="text"
-              placeholder="Property"
+              placeholder={translation("Property")}
               className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
             ></input>
             <select className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}>
-              <option value="">Operator</option>
+              <option value="">{translation("Operator")}</option>
             </select>
             <input
               type="text"
-              placeholder="Value"
+              placeholder={translation("Value")}
               className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow border-black')}
             ></input>
             <button

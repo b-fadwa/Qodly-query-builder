@@ -2,8 +2,9 @@ import { FC, useState } from 'react';
 import cn from 'classnames';
 import NewRule from './NewRule';
 import { FaRegTrashAlt } from 'react-icons/fa';
-import { selectResolver, useEnhancedEditor } from '@ws-ui/webform-editor';
+import { selectResolver, useEnhancedEditor, useI18n, useLocalization } from '@ws-ui/webform-editor';
 import { Element } from '@ws-ui/craftjs-core';
+import { get } from 'lodash';
 
 interface IQueryGroupProps {
   setGroups: (v: any) => void;
@@ -92,6 +93,9 @@ const NewGroup: FC<IQueryGroupProps> = ({
   const [isExcept, setExcept] = useState<boolean>(false);
   const [isNewRule, setIsNewRule] = useState<boolean>(false);
   const { resolver } = useEnhancedEditor(selectResolver);
+  const { i18n } = useI18n();
+  const { selected: lang } = useLocalization();
+  const translation = (key: string) => get(i18n, `keys.${key}.${lang}`, get(i18n, `keys.${key}.default`, key));
 
   const setAndOperator = (index: number) => {
     setOr(isAnd);
@@ -266,7 +270,7 @@ const NewGroup: FC<IQueryGroupProps> = ({
                 }
                 onClick={() => setGroupAndOperator(index)}
               >
-                And
+                {translation("and")}
               </button>
               <button
                 className={
@@ -276,7 +280,7 @@ const NewGroup: FC<IQueryGroupProps> = ({
                 }
                 onClick={() => setGroupOrOperator(index)}
               >
-                Or
+                {translation("Or")}
               </button>
             </div>
           )}
@@ -302,7 +306,7 @@ const NewGroup: FC<IQueryGroupProps> = ({
                   }
                   onClick={() => setAndOperator(index)}
                 >
-                  And
+                  {translation("And")}
                 </button>
                 <button
                   className={
@@ -317,7 +321,7 @@ const NewGroup: FC<IQueryGroupProps> = ({
                     setOrOperator(index);
                   }}
                 >
-                  Or
+                  {translation("Or")}
                 </button>
                 <button
                   className={
@@ -329,7 +333,7 @@ const NewGroup: FC<IQueryGroupProps> = ({
                     setExceptOperator(index);
                   }}
                 >
-                  Except
+                  {translation("Except")}
                 </button>
               </div>
               <div className="flex flex-row justify-start gap-1 w-1/6 h-10">
