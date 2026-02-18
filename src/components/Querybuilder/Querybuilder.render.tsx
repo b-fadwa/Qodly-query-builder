@@ -59,7 +59,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
       isDate: item.type === 'date',
       isImage: item.type === 'image',
       isString: item.type === 'string',
-      isNumber: item.type === 'long',
+      isNumber: item.type === 'long' || item.type === 'number',
       isBoolean: item.type === 'bool',
       isDuration: item.type === 'duration',
       isRelated: item.kind === 'relatedEntities' || item.kind === 'relatedEntity',
@@ -106,7 +106,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
                 isDate: attr.type === 'date',
                 isImage: attr.type === 'image',
                 isString: attr.type === 'string',
-                isNumber: attr.type === 'long',
+                isNumber: attr.type === 'long' || attr.type === "number",
                 isBoolean: attr.type === 'bool',
                 isDuration: attr.type === 'duration',
                 isRelated: attr.kind === 'relatedEntities' || attr.kind === 'relatedEntity',
@@ -128,7 +128,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
               isDate: item.type === 'date',
               isImage: item.type === 'image',
               isString: item.type === 'string',
-              isNumber: item.type === 'long',
+              isNumber: item.type === 'long' || item.type === "number",
               isBoolean: item.type === 'bool',
               isDuration: item.type === 'duration',
               isRelated: item.kind === 'relatedEntities' || item.kind === 'relatedEntity',
@@ -155,6 +155,11 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
     setInputValues([[]]);
   }, []);
 
+
+  useEffect(() => {
+    console.log({ allProperties });
+
+  }, [allProperties])
   useEffect(() => {
     // If ds is loaded and allProperties are set
     if (allProperties.length > 0 && columns && columns.length > 0) {
@@ -172,7 +177,6 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
           console.error('Property not found in the dataclass !');
           return;
         }
-
         updatedInputs.push({
           source: entry.source,
           type: property.type,
@@ -308,6 +312,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
     if (!wrongSyntax) {
       setQuery(formedQuery);
     }
+    console.log('formedQuery', formedQuery);
   };
 
   useEffect(() => {
