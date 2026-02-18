@@ -108,7 +108,8 @@ const NewRule: FC<IQueryRuleProps> = ({
     const selectedAttribute = properties.find(
       (attribute: any) => attribute.name === v.target.value,
     );
-    if (selectedAttribute && selectedAttribute.isRelated) {
+    if (!selectedAttribute) return;
+    if (selectedAttribute.isRelated) {
       const relatedEntityAttributes = allProperties
         .filter(
           (attr: any) =>
@@ -126,33 +127,29 @@ const NewRule: FC<IQueryRuleProps> = ({
           isDate: attr.isDate,
           isBoolean: attr.isBoolean,
         }));
-
-      setRelatedAttributes((prev: any) =>
-        prev.map((group: any, gIndex: number) => {
-          if (gIndex !== groupIndex) return group;
-
-          const updatedGroup = [...(group || [])];
-          updatedGroup[ruleIndex] = relatedEntityAttributes;
-          return updatedGroup;
-        })
-      );
-      setRelatedAttributes((prev: any) =>
-        prev.map((group: any, gIndex: number) => {
-          if (gIndex !== groupIndex) return group;
-
-          const updatedGroup = [...(group || [])];
-          updatedGroup[ruleIndex] = [];
-          return updatedGroup;
-        })
-      );
-
+      setRelatedAttributes((prev: any) => {
+        const updated = [...prev];
+        updated[groupIndex] = updated[groupIndex] || [];
+        updated[groupIndex][ruleIndex] = relatedEntityAttributes;
+        return updated;
+      });
       setProperty(selectedAttribute);
-      updateLabel(selectedAttribute.name, groupIndex, ruleIndex);
-      updateRelatedLabel('', groupIndex, ruleIndex);
-      updateOperator('', groupIndex, ruleIndex);
-      updateInput('', groupIndex, ruleIndex);
+      return;
     }
+    // Non related
+    setRelatedAttributes((prev: any) => {
+      const updated = [...prev];
+      updated[groupIndex] = updated[groupIndex] || [];
+      updated[groupIndex][ruleIndex] = [];
+      return updated;
+    });
+    setProperty(selectedAttribute);
+    updateLabel(selectedAttribute.name, ruleIndex, groupIndex);
+    updateRelatedLabel('', ruleIndex, groupIndex);
+    updateOperator('', ruleIndex, groupIndex);
+    updateInput('', ruleIndex, groupIndex);
   };
+
 
   const updateInput = (v: any, ruleIndex: number, groupIndex: number) => {
     setInputValues((prevValues: any) => {
@@ -248,7 +245,7 @@ const NewRule: FC<IQueryRuleProps> = ({
       </select>
       {/* get all properties of the related attribute */}
       {(property?.isRelated || property?.name?.includes('.')) &&
-        relatedAttributes[groupIndex][ruleIndex].length > 0 && (
+        relatedAttributes?.[groupIndex]?.[ruleIndex].length > 0 && (
           <select
             className="builder-input p-2 h-10 rounded-md grow w-1/4"
             ref={labelSelect}
