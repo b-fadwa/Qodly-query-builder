@@ -1,5 +1,7 @@
 import { FC, useEffect, useState } from 'react';
 import cn from 'classnames';
+import { useI18n, useLocalization } from '@ws-ui/webform-editor';
+import { get } from 'lodash';
 
 interface IQueryRuleProps {
   defaultInput: any;
@@ -48,6 +50,11 @@ const NewRule: FC<IQueryRuleProps> = ({
   setFinalLabels,
   setSelectedOperators,
 }) => {
+  const { i18n } = useI18n();
+  const { selected: lang } = useLocalization();
+  //key=column name
+  const translation = (key: string) => get(i18n, `keys.${key}.${lang}`, get(i18n, `keys.${key}.default`, key));
+
   const [property, setProperty] = useState<any>(); //if default exists else selected one setup
   const selectedKey =
     selectedRelatedLabels?.[groupIndex]?.[ruleIndex] !== undefined
@@ -236,7 +243,7 @@ const NewRule: FC<IQueryRuleProps> = ({
           Select a property
         </option>
         {properties.map((attribute: any) => (
-          <option value={attribute.name}>{attribute.name}</option>
+          <option value={attribute.name}>{translation(attribute.name)}</option>
         ))}
       </select>
       {/* get all properties of the related attribute */}
@@ -262,7 +269,7 @@ const NewRule: FC<IQueryRuleProps> = ({
                   : attr.name;
                 return (
                   <option key={attr.name} value={attr.name}>
-                    {baseName}
+                    {translation(baseName)}
                   </option>
                 );
               })}
