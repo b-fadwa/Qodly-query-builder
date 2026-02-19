@@ -2,6 +2,8 @@ import { FC, useState } from 'react';
 import cn from 'classnames';
 import NewRule from './NewRule';
 import { FaRegTrashAlt } from 'react-icons/fa';
+import { useI18n, useLocalization } from '@ws-ui/webform-editor';
+import { get } from 'lodash';
 
 interface IQueryGroupProps {
   setGroups: (v: any) => void;
@@ -89,6 +91,17 @@ const NewGroup: FC<IQueryGroupProps> = ({
   const [isOr, setOr] = useState<boolean>(false);
   const [isExcept, setExcept] = useState<boolean>(false);
   const [isNewRule, setIsNewRule] = useState<boolean>(false);
+  const { i18n } = useI18n();
+  const { selected: lang } = useLocalization();
+
+  const translation = (key: string): string => {
+    const formattedKey = key.replace(/\s+/g, "_");
+    return get(
+      i18n,
+      `keys.queryBuilder_${formattedKey}.${lang}`,
+      get(i18n, `keys.queryBuilder_${formattedKey}.default`, key)
+    );
+  };
 
   const setAndOperator = (index: number) => {
     setOr(isAnd);
@@ -224,15 +237,28 @@ const NewGroup: FC<IQueryGroupProps> = ({
       updatedGroups[groupIndex] = {
         //add a new rule to the selected group after creating a copy of it to return old rules too
         ...updatedGroups[groupIndex],
-        rules: [...updatedGroups[groupIndex].rules, {}], // Append a new rule to th
+        rules: [...updatedGroups[groupIndex].rules, {}], // Append a new rule to the selected group
       };
       return updatedGroups;
     });
     setIsNewRule(true);
-    setSelectedLabels((prevLabels: any) => [...prevLabels, []]);
-    setSelectedOperators((prevOperators: any) => [...prevOperators, []]);
-    setInputValues((prevInputs: any) => [...prevInputs, []]);
+    setSelectedLabels((prev: any) =>
+      prev.map((group: any, i: number) =>
+        i === groupIndex ? [...group, null] : group
+      )
+    );
+    setSelectedOperators((prev: any) =>
+      prev.map((group: any, i: number) =>
+        i === groupIndex ? [...group, null] : group
+      )
+    );
+    setInputValues((prev: any) =>
+      prev.map((group: any, i: number) =>
+        i === groupIndex ? [...group, null] : group
+      )
+    );
   };
+
   return (
     <>
       {groups[index] && groups[index].rules && groups[index].rules.length > 0 && (
@@ -243,14 +269,14 @@ const NewGroup: FC<IQueryGroupProps> = ({
                 className={
                   isAndGroupActive[index]
                     ? cn(
-                        'builder-and-group',
-                        'grow rounded-md border-2  border-purple-400 bg-white',
-                      )
+                      'builder-and-group',
+                      'grow rounded-md border-2  border-purple-400 bg-white',
+                    )
                     : cn('builder-and-group', ' grow rounded-md border-2 bg-purple-400')
                 }
                 onClick={() => setGroupAndOperator(index)}
               >
-                And
+                {translation("and")}
               </button>
               <button
                 className={
@@ -260,7 +286,7 @@ const NewGroup: FC<IQueryGroupProps> = ({
                 }
                 onClick={() => setGroupOrOperator(index)}
               >
-                Or
+                {translation("Or")}
               </button>
             </div>
           )}
@@ -286,22 +312,22 @@ const NewGroup: FC<IQueryGroupProps> = ({
                   }
                   onClick={() => setAndOperator(index)}
                 >
-                  And
+                  {translation("And")}
                 </button>
                 <button
                   className={
                     isOrActive[index]
                       ? cn('builder-or', 'grow rounded-md  border-2 bg-purple-400')
                       : cn(
-                          'builder-or',
-                          'grow rounded-md border-2 border-purple-400 bg-white hover:bg-sky-700',
-                        )
+                        'builder-or',
+                        'grow rounded-md border-2 border-purple-400 bg-white hover:bg-sky-700',
+                      )
                   }
                   onClick={() => {
                     setOrOperator(index);
                   }}
                 >
-                  Or
+                  {translation("Or")}
                 </button>
                 <button
                   className={
@@ -313,22 +339,12 @@ const NewGroup: FC<IQueryGroupProps> = ({
                     setExceptOperator(index);
                   }}
                 >
-                  Except
+                  {translation("Except")}
                 </button>
               </div>
               <div className="flex flex-row justify-start gap-1 w-1/6 h-10">
-                <button
-                  className={cn('builder-rule', 'grow rounded-md bg-purple-400 w-1/2')}
-                  onClick={() => generateRule(index)}
-                >
-                  + Rule
-                </button>
-                <button
-                  className={cn('builder-group', 'grow rounded-md bg-purple-400 w-1/2')}
-                  onClick={generateGroup}
-                >
-                  + Group
-                </button>
+                <button className='builder-rule min-h-10 grow rounded-md bg-purple-400 h-10 w-full' onClick={() => generateRule(index)}>+ {translation("Rule")}</button>
+                <button className='builder-group min-h-10 grow min-w-fit rounded-md bg-purple-400 h-10 w-full' onClick={() => generateGroup()}>+ {translation("Group")}</button>
               </div>
             </div>
             <div className={cn('builder-body', 'flex flex-col grow p-2')}>

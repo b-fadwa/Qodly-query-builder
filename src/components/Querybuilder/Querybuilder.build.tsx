@@ -1,15 +1,29 @@
-import { useEnhancedNode } from '@ws-ui/webform-editor';
+import { useEnhancedNode, useI18n, useLocalization } from '@ws-ui/webform-editor';
 import cn from 'classnames';
 import { FC } from 'react';
 
 import { IQuerybuilderProps } from './Querybuilder.config';
 import { FaRegTrashAlt } from 'react-icons/fa';
+import { get } from 'lodash';
 
 const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [] }) => {
   const {
     connectors: { connect },
   } = useEnhancedNode();
 
+  const { i18n } = useI18n();
+  const { selected: lang } = useLocalization();
+
+  const translation = (key: string): string => {
+    const formattedKey = key.replace(/\s+/g, "_");
+    return get(
+      i18n,
+      `keys.queryBuilder_${formattedKey}.${lang}`,
+      get(i18n, `keys.queryBuilder_${formattedKey}.default`, key)
+    );
+  };
+
+  
   return (
     <div ref={connect} style={style} className={cn(className, classNames)}>
       <div
@@ -25,12 +39,12 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
             <button
               className={cn('builder-and', 'grow rounded-md border-2 border-purple-400 bg-white ')}
             >
-              And
+              {translation("And")}
             </button>
             <button
               className={cn('builder-or', 'grow rounded-md border-2 border-purple-400 bg-white')}
             >
-              Or
+              {translation("Or")}
             </button>
             <button
               className={cn(
@@ -38,31 +52,27 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
                 'grow rounded-md border-2 border-purple-400 bg-white',
               )}
             >
-              Except
+              {translation("Except")}
             </button>
           </div>
           <div className="flex flex-row justify-start gap-1 w-1/6 h-10">
-            <button className={cn('builder-rule', 'grow rounded-md bg-purple-400 w-1/2')}>
-              + Rule
-            </button>
-            <button className={cn('builder-group', 'grow rounded-md bg-purple-400 w-1/2')}>
-              + Group
-            </button>
+            <button className='builder-rule min-h-10 grow rounded-md bg-purple-400 h-10 w-full'>+ {translation("Rule")}</button>
+            <button className='builder-group min-h-10 grow min-w-fit rounded-md bg-purple-400 h-10 w-full'>+ {translation("Group")}</button>
           </div>
         </div>
         <div className={cn('builder-body', 'flex flex-col grow p-2')}>
           <div className={cn('builder-rule-line', 'w-full h-fit flex flex-row p-2 gap-6')}>
             <input
               type="text"
-              placeholder="Property"
+              placeholder={translation("Property")}
               className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}
             ></input>
             <select className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow')}>
-              <option value="">Operator</option>
+              <option value="">{translation("Operator")}</option>
             </select>
             <input
               type="text"
-              placeholder="Value"
+              placeholder={translation("Value")}
               className={cn('builder-input', 'bg-white p-2 h-10 rounded-md grow border-black')}
             ></input>
             <button
@@ -77,15 +87,8 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
         </div>
         <div className={cn('builder-footer', 'w-full flex flex-row justify-end')}>
           <div className="flex gap-1 h-10 w-1/6">
-            <button
-              className={cn(
-                'builder-clear',
-                'rounded-md border-2 border-purple-400 bg-white w-1/2',
-              )}
-            >
-              Clear
-            </button>
-            <button className={cn('builder-apply', 'rounded-md bg-purple-400 w-1/2')}>Apply</button>
+            <button className='builder-clear rounded-md border-2 border-purple-400 text-purple-400 bg-white grow w-full'>{translation("Clear")}</button>
+            <button className='builder-apply rounded-md bg-purple-400 w-full grow'>{translation("Apply")}</button>
           </div>
         </div>
       </div>
