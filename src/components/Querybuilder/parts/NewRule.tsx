@@ -52,8 +52,15 @@ const NewRule: FC<IQueryRuleProps> = ({
 }) => {
   const { i18n } = useI18n();
   const { selected: lang } = useLocalization();
-  //key=column name
-  const translation = (key: string) => get(i18n, `keys.${key}.${lang}`, get(i18n, `keys.${key}.default`, key));
+
+  const translation = (key: string): string => {
+    const formattedKey = key.replace(/\s+/g, "_");
+    return get(
+      i18n,
+      `keys.queryBuilder_${formattedKey}.${lang}`,
+      get(i18n, `keys.queryBuilder_${formattedKey}.default`, key)
+    );
+  };
 
   const [property, setProperty] = useState<any>(); //if default exists else selected one setup
   const selectedKey =

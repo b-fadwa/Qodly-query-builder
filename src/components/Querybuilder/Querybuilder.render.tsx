@@ -1,9 +1,9 @@
-import { selectResolver, useDataLoader, useEnhancedEditor, useRenderer, useSources } from '@ws-ui/webform-editor';
+import { useDataLoader, useI18n, useLocalization, useRenderer, useSources } from '@ws-ui/webform-editor';
 import cn from 'classnames';
 import { FC, useEffect, useRef, useState } from 'react';
-import { Element } from '@ws-ui/craftjs-core';
 import { IQuerybuilderProps } from './Querybuilder.config';
 import NewGroup from './parts/NewGroup';
+import { get } from 'lodash';
 const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, classNames = [] }) => {
   const { connect } = useRenderer();
   const [groups, setGroups] = useState([{ rules: [{}] }]);
@@ -45,7 +45,18 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
   const { fetchIndex } = useDataLoader({
     source: ds,
   });
-  const { resolver } = useEnhancedEditor(selectResolver);
+
+  const { i18n } = useI18n();
+  const { selected: lang } = useLocalization();
+
+  const translation = (key: string): string => {
+    const formattedKey = key.replace(/\s+/g, "_");
+    return get(
+      i18n,
+      `keys.queryBuilder_${formattedKey}.${lang}`,
+      get(i18n, `keys.queryBuilder_${formattedKey}.default`, key)
+    );
+  };
 
   useEffect(() => {
     if (!ds) return;
@@ -389,22 +400,8 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
           className={cn('builder-footer', 'w-full flex flex-row justify-end')}
         >
           <div className="flex gap-1 h-10 w-1/6">
-            <div className="grow flex" onClick={() => clearBuilder()}>
-              <Element
-                id="builder-clear"
-                is={resolver.Button}
-                text="Clear"
-                classNames={['builder-clear rounded-md border-2 border-purple-400 text-purple-400 bg-white grow w-full !important']}
-              />
-            </div>
-            <div className="grow flex" onClick={() => formQuery()} >
-              <Element
-                id="builder-apply"
-                is={resolver.Button}
-                text="Apply"
-                classNames={['grow builder-apply rounded-md bg-purple-400 w-full  !important']}
-              />
-            </div>
+            <button className='builder-clear rounded-md border-2 border-purple-400 text-purple-400 bg-white grow w-full' onClick={() => clearBuilder()}>{translation("Clear")}</button>
+            <button className='builder-apply rounded-md bg-purple-400 w-full grow' onClick={() => formQuery()} >{translation("Apply")}</button>
           </div>
         </div>
       </div>

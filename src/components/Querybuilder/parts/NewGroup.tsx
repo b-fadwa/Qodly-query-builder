@@ -2,8 +2,7 @@ import { FC, useState } from 'react';
 import cn from 'classnames';
 import NewRule from './NewRule';
 import { FaRegTrashAlt } from 'react-icons/fa';
-import { selectResolver, useEnhancedEditor, useI18n, useLocalization } from '@ws-ui/webform-editor';
-import { Element } from '@ws-ui/craftjs-core';
+import { useI18n, useLocalization } from '@ws-ui/webform-editor';
 import { get } from 'lodash';
 
 interface IQueryGroupProps {
@@ -92,10 +91,17 @@ const NewGroup: FC<IQueryGroupProps> = ({
   const [isOr, setOr] = useState<boolean>(false);
   const [isExcept, setExcept] = useState<boolean>(false);
   const [isNewRule, setIsNewRule] = useState<boolean>(false);
-  const { resolver } = useEnhancedEditor(selectResolver);
   const { i18n } = useI18n();
   const { selected: lang } = useLocalization();
-  const translation = (key: string) => get(i18n, `keys.${key}.${lang}`, get(i18n, `keys.${key}.default`, key));
+
+  const translation = (key: string): string => {
+    const formattedKey = key.replace(/\s+/g, "_");
+    return get(
+      i18n,
+      `keys.queryBuilder_${formattedKey}.${lang}`,
+      get(i18n, `keys.queryBuilder_${formattedKey}.default`, key)
+    );
+  };
 
   const setAndOperator = (index: number) => {
     setOr(isAnd);
@@ -337,22 +343,8 @@ const NewGroup: FC<IQueryGroupProps> = ({
                 </button>
               </div>
               <div className="flex flex-row justify-start gap-1 w-1/6 h-10">
-                <div className="grow" onClick={() => generateRule(index)} >
-                  <Element
-                    id="builder-rule"
-                    is={resolver.Button}
-                    text="+ Rule"
-                    classNames={["builder-rule rounded-md bg-purple-400 w-full min-h-10 h-10 !important"]}
-                  />
-                </div>
-                <div className="grow" onClick={() => generateGroup()}>
-                  <Element
-                    id="builder-group"
-                    is={resolver.Button}
-                    text="+ Group"
-                    classNames={["builder-group min-w-fit rounded-md bg-purple-400 w-full min-h-10 h-10 !important"]}
-                  />
-                </div>
+                <button className='builder-rule min-h-10 grow rounded-md bg-purple-400 h-10 w-full' onClick={() => generateRule(index)}>+ {translation("Rule")}</button>
+                <button className='builder-group min-h-10 grow min-w-fit rounded-md bg-purple-400 h-10 w-full' onClick={() => generateGroup()}>+ {translation("Group")}</button>
               </div>
             </div>
             <div className={cn('builder-body', 'flex flex-col grow p-2')}>
