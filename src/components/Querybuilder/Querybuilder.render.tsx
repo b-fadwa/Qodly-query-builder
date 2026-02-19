@@ -168,10 +168,6 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
 
 
   useEffect(() => {
-    console.log({ allProperties });
-
-  }, [allProperties])
-  useEffect(() => {
     // If ds is loaded and allProperties are set
     if (allProperties.length > 0 && columns && columns.length > 0) {
       const updatedInputs: any[] = [];
@@ -323,7 +319,6 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
     if (!wrongSyntax) {
       setQuery(formedQuery);
     }
-    console.log('formedQuery', formedQuery);
   };
 
   useEffect(() => {
