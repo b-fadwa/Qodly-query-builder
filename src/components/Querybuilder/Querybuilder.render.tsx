@@ -341,7 +341,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
   return (
     <div ref={connect} style={style} className={cn(className, classNames)}>
       <div
-        className={cn('builder', 'flex flex-col h-full gap-4 bg-gray-800 rounded-lg p-2 min-w-fit')}
+        className={cn('builder', 'w-full flex flex-col h-full gap-4 bg-gray-800 rounded-lg p-2 flex-wrap')}
       >
         <div className={cn('builder-body', 'flex flex-col grow gap-2 p-2')}>
           {groups.map(({ }, index) => (
@@ -394,9 +394,9 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
         <div
           className={cn('builder-footer', 'w-full flex flex-row justify-end')}
         >
-          <div className="flex gap-1 h-10 w-1/6">
-            <button className='builder-clear rounded-md border-2 border-purple-400 text-purple-400 bg-white grow w-full' onClick={() => clearBuilder()}>{translation("Clear")}</button>
-            <button className='builder-apply rounded-md bg-purple-400 w-full grow' onClick={() => formQuery()} >{translation("Apply")}</button>
+          <div className="flex gap-1 h-10">
+            <button className='builder-clear rounded-md border-2 border-purple-400 text-purple-400 bg-white grow min-w-fit w-full' onClick={() => clearBuilder()}>{translation("Clear")}</button>
+            <button className='builder-apply rounded-md bg-purple-400 w-full grow min-w-fit' onClick={() => formQuery()} >{translation("Apply")}</button>
           </div>
         </div>
       </div>
