@@ -81,7 +81,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ style, className, classNames = [
                   'bg-white  p-3 rounded-md border-2 border-rose-500 text-rose-500',
                 )}
               >
-                Remove
+                {translation("Remove")}
               </button>
             </div>
           </div>

@@ -383,7 +383,7 @@ const NewGroup: FC<IQueryGroupProps> = ({
                           )}
                           onClick={() => removeRule(index, inputIndex)}
                         >
-                          Remove
+                          {translation("Remove")}
                           {/* <FaRegTrashAlt /> */}
                         </button>
                       </div>
@@ -428,7 +428,7 @@ const NewGroup: FC<IQueryGroupProps> = ({
                         onClick={() => removeRule(index, ruleIndex)}
                       >
                         {/* <FaRegTrashAlt /> */}
-                        Remove
+                        {translation("Remove")}
                       </button>
                     </div>
                   ))}
