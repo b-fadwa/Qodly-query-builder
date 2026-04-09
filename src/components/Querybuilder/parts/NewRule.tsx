@@ -167,11 +167,6 @@ const NewRule: FC<IQueryRuleProps> = ({
         : (updatedValues[groupIndex][ruleIndex] = v);
       return updatedValues;
     });
-
-    const input = inputRefs.current[groupIndex]?.[ruleIndex];
-    if (input) {
-      Array.isArray(input) ? input[0]?.focus() : input?.focus();
-    }
   };
 
   const updateLabel = (v: any, ruleIndex: number, groupIndex: number) => {
@@ -420,8 +415,8 @@ const NewRule: FC<IQueryRuleProps> = ({
                 inputRefs.current[groupIndex][ruleIndex][0] = input; // Store first date input
               }}
               className="builder-input bg-white p-2 h-10 rounded-md grow w-1/4"
-              value={inputValues[groupIndex][ruleIndex]?.[0] || ''}
-              onChange={(v) => {
+              defaultValue={inputValues[groupIndex][ruleIndex]?.[0] || ''}
+              onBlur={(v) => {
                 updateInput(
                   [v.target.value, inputValues[groupIndex][ruleIndex]?.[1] || ''],
                   ruleIndex,
@@ -443,8 +438,8 @@ const NewRule: FC<IQueryRuleProps> = ({
                   inputRefs.current[groupIndex][ruleIndex][1] = input; // Store second date input
                 }}
                 className="builder-input bg-white p-2 h-10 rounded-md grow w-1/4"
-                value={inputValues[groupIndex][ruleIndex]?.[1] || ''}
-                onChange={(v) => {
+                defaultValue={inputValues[groupIndex][ruleIndex]?.[1] || ''}
+                onBlur={(v) => {
                   updateInput(
                     [inputValues[groupIndex][ruleIndex]?.[0] || '', v.target.value],
                     ruleIndex,
