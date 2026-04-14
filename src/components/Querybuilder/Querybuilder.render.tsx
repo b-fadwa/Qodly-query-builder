@@ -5,7 +5,8 @@ import { IQuerybuilderProps } from './Querybuilder.config';
 import NewGroup from './parts/NewGroup';
 import { get } from 'lodash';
 const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, classNames = [] }) => {
-  const { connect } = useRenderer();
+  const renderer = useRenderer() as any;
+  const { connect } = renderer;
   const [groups, setGroups] = useState([{ rules: [{}] }]);
   //query properties states
   const [builderQuery, setQuery] = useState<string | null>(null);
@@ -34,6 +35,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
   const inputRefs = useRef<{
     [groupIndex: number]: { [ruleIndex: number]: HTMLInputElement | null };
   }>({});
+  const shouldEmitOnApply = useRef<boolean>(false);
   //default rules
   const [inputs, setInputs] = useState<any[]>([]);
   const [isCleared, setIsCleared] = useState<boolean>(false);
@@ -210,6 +212,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
   }, [columns, allProperties]);
 
   const clearBuilder = () => {
+    shouldEmitOnApply.current = false;
     setGroups([{ rules: [{}] }]);
     //+clear datasources binded to inputs...
     setSelectedLabels([[]]);
@@ -317,6 +320,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
       }
     });
     if (!wrongSyntax) {
+      shouldEmitOnApply.current = true;
       setQuery(formedQuery);
     }
   };
@@ -334,6 +338,11 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
       });
       await fetchIndex(0);
       ds.fireEvent('changed');
+      if (shouldEmitOnApply.current) {
+        renderer.emit?.('onapply');
+        renderer.fireEvent?.('onapply');
+        shouldEmitOnApply.current = false;
+      }
     };
     fetchData();
   }, [builderQuery]);
