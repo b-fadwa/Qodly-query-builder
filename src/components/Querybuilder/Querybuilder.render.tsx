@@ -4,9 +4,10 @@ import { FC, useEffect, useRef, useState } from 'react';
 import { IQuerybuilderProps } from './Querybuilder.config';
 import NewGroup from './parts/NewGroup';
 import { get } from 'lodash';
+import { toastSubject } from '@ws-ui/shared';
+
 const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, classNames = [] }) => {
-  const renderer = useRenderer() as any;
-  const { connect } = renderer;
+  const { connect, emit } = useRenderer();
   const [groups, setGroups] = useState([{ rules: [{}] }]);
   //query properties states
   const [builderQuery, setQuery] = useState<string | null>(null);
@@ -236,44 +237,71 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
     setInputs([]);
   };
 
+  const callOnApplyIfNeeded = () => {
+    if (!shouldEmitOnApply.current) return;
+    emit('onapply');
+    shouldEmitOnApply.current = false;
+  };
+
   const formQuery = () => {
     let formedQuery: string = '';
     let wrongSyntax: boolean = false;
+    const hasAnyCriteria = groups.some((group, groupIndex) =>
+      group.rules.some((_, ruleIndex) => {
+        const label = finalLabels[groupIndex]?.[ruleIndex];
+        const selectedOperator = selectedOperators[groupIndex]?.[ruleIndex];
+        const value = inputValues[groupIndex]?.[ruleIndex];
+        const hasValue = Array.isArray(value)
+          ? value.some((item) => item !== undefined && item !== '')
+          : value !== undefined && value !== '';
+        return !!label || !!selectedOperator || hasValue;
+      }),
+    );
+
+    // Empty filter: close dialog without changing datasource selection.
+    if (!hasAnyCriteria) {
+      shouldEmitOnApply.current = true;
+      callOnApplyIfNeeded();
+      return;
+    }
+
     groups.forEach((group, groupIndex) => {
       const groupQueries = group.rules.map((_, ruleIndex) => {
+        const selectedOperator = selectedOperators[groupIndex]?.[ruleIndex];
+        const selectedValue = inputValues[groupIndex]?.[ruleIndex];
         const operator =
-          selectedOperators[groupIndex][ruleIndex] === 'between'
+          selectedOperator === 'between'
             ? ''
-            : selectedOperators[groupIndex][ruleIndex] == 'contains' ||
-              selectedOperators[groupIndex][ruleIndex] == 'end'
+            : selectedOperator == 'contains' ||
+              selectedOperator == 'end'
               ? '='
-              : selectedOperators[groupIndex][ruleIndex] || '';
+              : selectedOperator || '';
         let value =
-          selectedOperators[groupIndex][ruleIndex] === 'between'
+          selectedOperator === 'between'
             ? ''
-            : selectedOperators[groupIndex][ruleIndex] === 'is null' ||
-              selectedOperators[groupIndex][ruleIndex] === 'is not null'
+            : selectedOperator === 'is null' ||
+              selectedOperator === 'is not null'
               ? ''
-              : selectedOperators[groupIndex][ruleIndex] === 'is true' ||
-                selectedOperators[groupIndex][ruleIndex] === 'is false'
+              : selectedOperator === 'is true' ||
+                selectedOperator === 'is false'
                 ? ''
-                : selectedOperators[groupIndex][ruleIndex] === 'contains'
-                  ? `"@${inputValues[groupIndex][ruleIndex]}@"`
-                  : selectedOperators[groupIndex][ruleIndex] === 'end'
-                    ? `"@${inputValues[groupIndex][ruleIndex]}"`
-                    : `"${inputValues[groupIndex][ruleIndex]}"` || '';
+                : selectedOperator === 'contains'
+                  ? `"@${selectedValue}@"`
+                  : selectedOperator === 'end'
+                    ? `"@${selectedValue}"`
+                    : `"${selectedValue}"` || '';
         // between case ->2 inputs
         if (
-          selectedOperators[groupIndex][ruleIndex] === 'between' &&
-          Array.isArray(inputValues[groupIndex][ruleIndex]) &&
-          inputValues[groupIndex][ruleIndex].length === 2
+          selectedOperator === 'between' &&
+          Array.isArray(selectedValue) &&
+          selectedValue.length === 2
         ) {
-          const [start, end] = inputValues[groupIndex][ruleIndex];
+          const [start, end] = selectedValue;
           value = '<=' + start + ' and ' + finalLabels[groupIndex][ruleIndex] + '>=' + end + '';
         }
         //missing required fields => don't execute query (wrong query => infinite execution errors)
         if (
-          selectedOperators[groupIndex][ruleIndex] === undefined ||
+          selectedOperator === undefined ||
           (selectedOperators &&
             selectedOperators[groupIndex].length !== groups[groupIndex].rules.length) ||
           inputValues[groupIndex] === undefined ||
@@ -319,10 +347,17 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
             : ' ' + groupOperators[groupIndex] + ' ';
       }
     });
-    if (!wrongSyntax) {
-      shouldEmitOnApply.current = true;
-      setQuery(formedQuery);
+    if (wrongSyntax) {
+      shouldEmitOnApply.current = false;
+      console.log('Wrong syntax in the filter query');
+      toastSubject.next({
+        kind: "error",
+        message: translation("Invalid filter!"),
+      });
+      return;
     }
+    shouldEmitOnApply.current = true;
+    setQuery(formedQuery);
   };
 
   useEffect(() => {
@@ -338,11 +373,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
       });
       await fetchIndex(0);
       ds.fireEvent('changed');
-      if (shouldEmitOnApply.current) {
-        renderer.emit?.('onapply');
-        renderer.fireEvent?.('onapply');
-        shouldEmitOnApply.current = false;
-      }
+      callOnApplyIfNeeded();
     };
     fetchData();
   }, [builderQuery]);
