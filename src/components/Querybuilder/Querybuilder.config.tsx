@@ -33,6 +33,10 @@ export default {
     icon: CiSearch,
     events: [
       {
+        label: 'On Apply',
+        value: 'onapply',
+      },
+      {
         label: 'On Click',
         value: 'onclick',
       },
@@ -87,6 +91,7 @@ export default {
     },
   },
   defaultProps: {
+    iterable: true,
     style: {
       width: '100%',
     },

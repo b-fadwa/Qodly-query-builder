@@ -1,11 +1,13 @@
-import { useDataLoader, useRenderer, useSources } from '@ws-ui/webform-editor';
+import { useDataLoader, useI18n, useLocalization, useRenderer, useSources } from '@ws-ui/webform-editor';
 import cn from 'classnames';
 import { FC, useEffect, useRef, useState } from 'react';
-
 import { IQuerybuilderProps } from './Querybuilder.config';
 import NewGroup from './parts/NewGroup';
+import { get } from 'lodash';
+import { toastSubject } from '@ws-ui/shared';
+
 const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, classNames = [] }) => {
-  const { connect } = useRenderer();
+  const { connect, emit } = useRenderer();
   const [groups, setGroups] = useState([{ rules: [{}] }]);
   //query properties states
   const [builderQuery, setQuery] = useState<string | null>(null);
@@ -34,6 +36,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
   const inputRefs = useRef<{
     [groupIndex: number]: { [ruleIndex: number]: HTMLInputElement | null };
   }>({});
+  const shouldEmitOnApply = useRef<boolean>(false);
   //default rules
   const [inputs, setInputs] = useState<any[]>([]);
   const [isCleared, setIsCleared] = useState<boolean>(false);
@@ -46,17 +49,31 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
     source: ds,
   });
 
+  const { i18n } = useI18n();
+  const { selected: lang } = useLocalization();
+
+  const translation = (key: string): string => {
+    const formattedKey = key.replace(/\s+/g, "_");
+    return get(
+      i18n,
+      `keys.queryBuilder_${formattedKey}.${lang}`,
+      get(i18n, `keys.queryBuilder_${formattedKey}.default`, key)
+    );
+  };
+
   useEffect(() => {
     if (!ds) return;
     const processedEntities = new Set(); // Set to track processed entities and prevent duplicates
+    const processedDataTypes = new Set(); // Track processed dataTypes to prevent cycles
+    const MAX_PROPERTIES = 5000; // Limit total properties to prevent memory overflow
     const formattedProperties = Object.values(ds.dataclass.getAllAttributes()).map((item: any) => ({
       name: item.name,
       kind: item.kind,
       type: item.type,
       isDate: item.type === 'date',
       isImage: item.type === 'image',
-      isString: item.type === 'string',
-      isNumber: item.type === 'long',
+      isString: item.type === 'string' || item.type === "word",
+      isNumber: item.type === 'long' || item.type === 'number',
       isBoolean: item.type === 'bool',
       isDuration: item.type === 'duration',
       isRelated: item.kind === 'relatedEntities' || item.kind === 'relatedEntity',
@@ -66,20 +83,22 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
 
     // Recursively process related entities and their attributes
     const processAttributes = (attributes: any[], dataClassName: string, depth: number = 0) => {
-      if (depth >= 5) return; // Stop at max depth to prevent infinite recursion
+      if (depth >= 2 || combinedProperties.length >= MAX_PROPERTIES) return; // Reduce depth and limit total properties
       attributes.forEach((item: any) => {
+        if (combinedProperties.length >= MAX_PROPERTIES) return; // Stop if limit reached
         const uniquePath = dataClassName + item.name;
         if (
           (item.kind === 'relatedEntities' ||
             item.kind === 'relatedEntity' ||
             (item.kind === 'calculated' && item.behavior === 'relatedEntities')) &&
-          depth < 5
+          depth < 2
         ) {
           const dataType = item.type.includes('Selection')
             ? item.type.replace('Selection', '')
             : item.type;
-          if (processedEntities.has(uniquePath)) return;
+          if (processedEntities.has(uniquePath) || processedDataTypes.has(dataType)) return;
           processedEntities.add(uniquePath);
+          processedDataTypes.add(dataType); // Prevent re-processing the same dataType
           // Get related entity attributes
           const relatedEntityAttributes = Object.values(
             (ds.dataclass._private.datastore as any)[dataType].getAllAttributes(),
@@ -92,6 +111,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
             isRelated: item.kind === 'relatedEntities' || item.kind === 'relatedEntity',
           });
           relatedEntityAttributes.forEach((attr: any) => {
+            if (combinedProperties.length >= MAX_PROPERTIES) return;
             if (attr.kind === 'storage' && !processedEntities.has(uniquePath + '.' + attr.name)) {
               combinedProperties.push({
                 name: uniquePath + '.' + attr.name,
@@ -99,8 +119,8 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
                 type: attr.type,
                 isDate: attr.type === 'date',
                 isImage: attr.type === 'image',
-                isString: attr.type === 'string',
-                isNumber: attr.type === 'long',
+                isString: attr.type === 'string' || attr.type === 'word',
+                isNumber: attr.type === 'long' || attr.type === "number",
                 isBoolean: attr.type === 'bool',
                 isDuration: attr.type === 'duration',
                 isRelated: attr.kind === 'relatedEntities' || attr.kind === 'relatedEntity',
@@ -108,23 +128,27 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
               processedEntities.add(uniquePath + '.' + attr.name); // Mark this attribute as processed
             }
           });
-          // Recurse on the related entity attributes to find deeper related entities
-          processAttributes(relatedEntityAttributes, uniquePath + '.', depth + 1);
+          // Only recurse if we haven't hit the limit
+          if (combinedProperties.length < MAX_PROPERTIES) {
+            processAttributes(relatedEntityAttributes, uniquePath + '.', depth + 1);
+          }
         } else if (item.kind === 'storage' && !processedEntities.has(uniquePath)) {
           // Handle non-related entities (storage)
-          combinedProperties.push({
-            name: uniquePath,
-            kind: item.kind,
-            type: item.type,
-            isDate: item.type === 'date',
-            isImage: item.type === 'image',
-            isString: item.type === 'string',
-            isNumber: item.type === 'long',
-            isBoolean: item.type === 'bool',
-            isDuration: item.type === 'duration',
-            isRelated: item.kind === 'relatedEntities' || item.kind === 'relatedEntity',
-          });
-          processedEntities.add(uniquePath);
+          if (combinedProperties.length < MAX_PROPERTIES) {
+            combinedProperties.push({
+              name: uniquePath,
+              kind: item.kind,
+              type: item.type,
+              isDate: item.type === 'date',
+              isImage: item.type === 'image',
+              isString: item.type === 'string' || item.type === "word",
+              isNumber: item.type === 'long' || item.type === "number",
+              isBoolean: item.type === 'bool',
+              isDuration: item.type === 'duration',
+              isRelated: item.kind === 'relatedEntities' || item.kind === 'relatedEntity',
+            });
+            processedEntities.add(uniquePath);
+          }
         }
       });
     };
@@ -145,6 +169,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
     setInputValues([[]]);
   }, []);
 
+
   useEffect(() => {
     // If ds is loaded and allProperties are set
     if (allProperties.length > 0 && columns && columns.length > 0) {
@@ -162,7 +187,6 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
           console.error('Property not found in the dataclass !');
           return;
         }
-
         updatedInputs.push({
           source: entry.source,
           type: property.type,
@@ -189,6 +213,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
   }, [columns, allProperties]);
 
   const clearBuilder = () => {
+    shouldEmitOnApply.current = false;
     setGroups([{ rules: [{}] }]);
     //+clear datasources binded to inputs...
     setSelectedLabels([[]]);
@@ -212,44 +237,71 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
     setInputs([]);
   };
 
+  const callOnApplyIfNeeded = () => {
+    if (!shouldEmitOnApply.current) return;
+    emit('onapply');
+    shouldEmitOnApply.current = false;
+  };
+
   const formQuery = () => {
     let formedQuery: string = '';
     let wrongSyntax: boolean = false;
+    const hasAnyCriteria = groups.some((group, groupIndex) =>
+      group.rules.some((_, ruleIndex) => {
+        const label = finalLabels[groupIndex]?.[ruleIndex];
+        const selectedOperator = selectedOperators[groupIndex]?.[ruleIndex];
+        const value = inputValues[groupIndex]?.[ruleIndex];
+        const hasValue = Array.isArray(value)
+          ? value.some((item) => item !== undefined && item !== '')
+          : value !== undefined && value !== '';
+        return !!label || !!selectedOperator || hasValue;
+      }),
+    );
+
+    // Empty filter: close dialog without changing datasource selection.
+    if (!hasAnyCriteria) {
+      shouldEmitOnApply.current = true;
+      callOnApplyIfNeeded();
+      return;
+    }
+
     groups.forEach((group, groupIndex) => {
       const groupQueries = group.rules.map((_, ruleIndex) => {
+        const selectedOperator = selectedOperators[groupIndex]?.[ruleIndex];
+        const selectedValue = inputValues[groupIndex]?.[ruleIndex];
         const operator =
-          selectedOperators[groupIndex][ruleIndex] === 'between'
+          selectedOperator === 'between'
             ? ''
-            : selectedOperators[groupIndex][ruleIndex] == 'contains' ||
-                selectedOperators[groupIndex][ruleIndex] == 'end'
+            : selectedOperator == 'contains' ||
+              selectedOperator == 'end'
               ? '='
-              : selectedOperators[groupIndex][ruleIndex] || '';
+              : selectedOperator || '';
         let value =
-          selectedOperators[groupIndex][ruleIndex] === 'between'
+          selectedOperator === 'between'
             ? ''
-            : selectedOperators[groupIndex][ruleIndex] === 'is null' ||
-                selectedOperators[groupIndex][ruleIndex] === 'is not null'
+            : selectedOperator === 'is null' ||
+              selectedOperator === 'is not null'
               ? ''
-              : selectedOperators[groupIndex][ruleIndex] === 'is true' ||
-                  selectedOperators[groupIndex][ruleIndex] === 'is false'
+              : selectedOperator === 'is true' ||
+                selectedOperator === 'is false'
                 ? ''
-                : selectedOperators[groupIndex][ruleIndex] === 'contains'
-                  ? `"@${inputValues[groupIndex][ruleIndex]}@"`
-                  : selectedOperators[groupIndex][ruleIndex] === 'end'
-                    ? `"@${inputValues[groupIndex][ruleIndex]}"`
-                    : `"${inputValues[groupIndex][ruleIndex]}"` || '';
+                : selectedOperator === 'contains'
+                  ? `"@${selectedValue}@"`
+                  : selectedOperator === 'end'
+                    ? `"@${selectedValue}"`
+                    : `"${selectedValue}"` || '';
         // between case ->2 inputs
         if (
-          selectedOperators[groupIndex][ruleIndex] === 'between' &&
-          Array.isArray(inputValues[groupIndex][ruleIndex]) &&
-          inputValues[groupIndex][ruleIndex].length === 2
+          selectedOperator === 'between' &&
+          Array.isArray(selectedValue) &&
+          selectedValue.length === 2
         ) {
-          const [start, end] = inputValues[groupIndex][ruleIndex];
+          const [start, end] = selectedValue;
           value = '<=' + start + ' and ' + finalLabels[groupIndex][ruleIndex] + '>=' + end + '';
         }
         //missing required fields => don't execute query (wrong query => infinite execution errors)
         if (
-          selectedOperators[groupIndex][ruleIndex] === undefined ||
+          selectedOperator === undefined ||
           (selectedOperators &&
             selectedOperators[groupIndex].length !== groups[groupIndex].rules.length) ||
           inputValues[groupIndex] === undefined ||
@@ -295,9 +347,17 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
             : ' ' + groupOperators[groupIndex] + ' ';
       }
     });
-    if (!wrongSyntax) {
-      setQuery(formedQuery);
+    if (wrongSyntax) {
+      shouldEmitOnApply.current = false;
+      console.log('Wrong syntax in the filter query');
+      toastSubject.next({
+        kind: "error",
+        message: translation("Invalid filter!"),
+      });
+      return;
     }
+    shouldEmitOnApply.current = true;
+    setQuery(formedQuery);
   };
 
   useEffect(() => {
@@ -313,6 +373,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
       });
       await fetchIndex(0);
       ds.fireEvent('changed');
+      callOnApplyIfNeeded();
     };
     fetchData();
   }, [builderQuery]);
@@ -320,10 +381,10 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
   return (
     <div ref={connect} style={style} className={cn(className, classNames)}>
       <div
-        className={cn('builder', 'flex flex-col h-full gap-4 bg-gray-800 rounded-lg p-2 min-w-fit')}
+        className={cn('builder', 'w-full flex flex-col h-full gap-4 bg-gray-800 rounded-lg p-2 flex-wrap')}
       >
         <div className={cn('builder-body', 'flex flex-col grow gap-2 p-2')}>
-          {groups.map(({}, index) => (
+          {groups.map(({ }, index) => (
             <div key={index}>
               <NewGroup
                 setGroups={setGroups}
@@ -372,19 +433,10 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
         </div>
         <div
           className={cn('builder-footer', 'w-full flex flex-row justify-end')}
-          onClick={() => formQuery()}
         >
-          <div className="flex gap-1 h-10 w-1/6">
-            <button
-              className={cn(
-                'builder-clear',
-                'rounded-md border-2 border-purple-400 bg-white w-1/2',
-              )}
-              onClick={() => clearBuilder()}
-            >
-              Clear
-            </button>
-            <button className={cn('builder-apply', 'rounded-md bg-purple-400 w-1/2')}>Apply</button>
+          <div className="flex gap-1 h-10">
+            <button className='builder-clear rounded-md border-2 border-purple-400 text-purple-400 bg-white grow min-w-fit w-full' onClick={() => clearBuilder()}>{translation("Clear")}</button>
+            <button className='builder-apply rounded-md bg-purple-400 w-full grow min-w-fit' onClick={() => formQuery()} >{translation("Apply")}</button>
           </div>
         </div>
       </div>
