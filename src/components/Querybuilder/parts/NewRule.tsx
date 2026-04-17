@@ -72,6 +72,28 @@ const NewRule: FC<IQueryRuleProps> = ({
     ? allProperties.find((prop: any) => prop.name === selectedKey)
     : null;
 
+  const pickDefaultAttribute = (attributes: any[] = []) => {
+    if (!attributes.length) return null;
+    const preferredNames = new Set(['id', 'uuid']);
+    const preferredAttribute = attributes.find(
+      (attribute: any) =>
+        typeof attribute?.name === 'string' && preferredNames.has(attribute.name.toLowerCase()),
+    );
+    return preferredAttribute || attributes[0];
+  };
+
+  const pickDefaultRelatedAttribute = (attributes: any[] = []) => {
+    if (!attributes.length) return null;
+    const preferredNames = new Set(['id', 'uuid']);
+    const preferredAttribute = attributes.find((attribute: any) => {
+      if (typeof attribute?.name !== 'string') return false;
+      const attributeNameParts = attribute.name.split('.');
+      const lastPart = attributeNameParts[attributeNameParts.length - 1];
+      return preferredNames.has(lastPart?.toLowerCase());
+    });
+    return preferredAttribute || attributes[0];
+  };
+
   useEffect(() => {
     if (selectedProperty) {
       setProperty(selectedProperty);
@@ -104,6 +126,16 @@ const NewRule: FC<IQueryRuleProps> = ({
   }, [defaultInput, selectedProperty]);
 
   useEffect(() => {
+    const alreadySelected = selectedLabels?.[groupIndex]?.[ruleIndex];
+    if (property || defaultInput || alreadySelected || !properties?.length) return;
+    const nonRelatedProperties = properties.filter((item: any) => !item.isRelated);
+    const defaultProperty = pickDefaultAttribute(nonRelatedProperties) || pickDefaultAttribute(properties);
+    if (!defaultProperty) return;
+    updateLabel(defaultProperty.name, ruleIndex, groupIndex);
+    handlePropertyChange({ target: { value: defaultProperty.name } }, ruleIndex, groupIndex);
+  }, [property, defaultInput, properties, selectedLabels, groupIndex, ruleIndex]);
+
+  useEffect(() => {
     if (isCleared) {
       setProperty(null);
     }
@@ -112,11 +144,15 @@ const NewRule: FC<IQueryRuleProps> = ({
 
   //get related attributes of the selected related attribute..
   const handlePropertyChange = (v: any, ruleIndex: number, groupIndex: number) => {
-    const selectedAttribute = properties.find(
-      (attribute: any) => attribute.name === v.target.value,
+    const selectedValue = v.target.value;
+    const selectedAttribute =
+      allProperties.find((attribute: any) => attribute.name === selectedValue) ||
+      properties.find((attribute: any) => attribute.name === selectedValue);
+    const isTopLevelAttribute = properties.some(
+      (attribute: any) => attribute.name === selectedAttribute?.name,
     );
     if (!selectedAttribute) return;
-    if (selectedAttribute.isRelated) {
+    if (selectedAttribute.isRelated && isTopLevelAttribute) {
       const relatedEntityAttributes = allProperties
         .filter(
           (attr: any) =>
@@ -140,10 +176,29 @@ const NewRule: FC<IQueryRuleProps> = ({
         updated[groupIndex][ruleIndex] = relatedEntityAttributes;
         return updated;
       });
-      setProperty(selectedAttribute);
+      const defaultRelatedAttribute = pickDefaultRelatedAttribute(relatedEntityAttributes);
+      if (defaultRelatedAttribute) {
+        setProperty(defaultRelatedAttribute);
+        updateRelatedLabel(defaultRelatedAttribute.name, ruleIndex, groupIndex);
+      } else {
+        setProperty(selectedAttribute);
+        updateRelatedLabel('', ruleIndex, groupIndex);
+      }
+      updateOperator('', ruleIndex, groupIndex);
+      updateInput('', ruleIndex, groupIndex);
       return;
     }
-    // Non related
+
+    // Related attribute selected from second select (relation.field)
+    if (!isTopLevelAttribute && selectedAttribute.name.includes('.')) {
+      setProperty(selectedAttribute);
+      updateRelatedLabel(selectedAttribute.name, ruleIndex, groupIndex);
+      updateOperator('', ruleIndex, groupIndex);
+      updateInput('', ruleIndex, groupIndex);
+      return;
+    }
+
+    // Non related top-level property
     setRelatedAttributes((prev: any) => {
       const updated = [...prev];
       updated[groupIndex] = updated[groupIndex] || [];
@@ -210,6 +265,30 @@ const NewRule: FC<IQueryRuleProps> = ({
       })
     );
   };
+
+  const getAvailableOperators = (selectedProperty: any): string[] => {
+    if (!selectedProperty) return [];
+    if (selectedProperty.isImage) return ['is null', 'is not null'];
+    if (selectedProperty.isString) {
+      return ['=', '!=', 'contains', 'begin', 'end', 'is null', 'is not null'];
+    }
+    if (selectedProperty.isNumber) return ['=', '!=', '&lt;', '&gt;', '&lt;=', '&gt;='];
+    if (selectedProperty.isDate || selectedProperty.isDuration) {
+      return ['=', '!=', '&lt;', '&lt;=', '&gt;', '&gt;=', 'between', 'is null', 'is not null'];
+    }
+    if (selectedProperty.isBoolean) return ['is true', 'is false', 'is null'];
+    return [];
+  };
+
+  useEffect(() => {
+    if (!property) return;
+    const selectedOperator = selectedOperators?.[groupIndex]?.[ruleIndex];
+    const availableOperators = getAvailableOperators(property);
+    if (availableOperators.length === 0) return;
+    if (!selectedOperator || !availableOperators.includes(selectedOperator)) {
+      updateOperator(availableOperators[0], ruleIndex, groupIndex);
+    }
+  }, [property, selectedOperators?.[groupIndex]?.[ruleIndex], groupIndex, ruleIndex]);
 
   useEffect(() => {
     updateFinalLabels(selectedLabels, selectedRelatedLabels);

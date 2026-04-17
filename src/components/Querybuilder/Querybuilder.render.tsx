@@ -119,7 +119,7 @@ const Querybuilder: FC<IQuerybuilderProps> = ({ columns, style, className, class
                 type: attr.type,
                 isDate: attr.type === 'date',
                 isImage: attr.type === 'image',
-                isString: attr.type === 'string',
+                isString: attr.type === 'string' || attr.type === 'word',
                 isNumber: attr.type === 'long' || attr.type === "number",
                 isBoolean: attr.type === 'bool',
                 isDuration: attr.type === 'duration',

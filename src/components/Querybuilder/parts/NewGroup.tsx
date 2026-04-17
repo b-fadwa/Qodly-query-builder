@@ -1,4 +1,4 @@
-import { FC, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 import cn from 'classnames';
 import NewRule from './NewRule';
 import { useI18n, useLocalization } from '@ws-ui/webform-editor';
@@ -101,6 +101,25 @@ const NewGroup: FC<IQueryGroupProps> = ({
       get(i18n, `keys.queryBuilder_${formattedKey}.default`, key)
     );
   };
+
+  useEffect(() => {
+    const currentGroup = groups[index];
+    if (!currentGroup || currentGroup.rules.length <= 1) return;
+    if (isAndActive[index] || isOrActive[index] || isExceptActive[index]) return;
+
+    setAnd(true);
+    setOr(false);
+    setExcept(false);
+    const updatedAndStates = [...isAndActive];
+    updatedAndStates[index] = true;
+    setAndActive(updatedAndStates);
+    const updatedOrStates = [...isOrActive];
+    updatedOrStates[index] = false;
+    setOrActive(updatedOrStates);
+    const updatedExceptStates = [...isExceptActive];
+    updatedExceptStates[index] = false;
+    setExceptActive(updatedExceptStates);
+  }, [groups, index, isAndActive, isOrActive, isExceptActive]);
 
   const setAndOperator = (index: number) => {
     setOr(isAnd);
@@ -224,10 +243,26 @@ const NewGroup: FC<IQueryGroupProps> = ({
   };
 
   const generateGroup = () => {
+    const nextGroupIndex = groups.length;
     setGroups([...groups, { rules: [{}] }]); //generate a new group with a first rule
     setSelectedLabels((prevLabels: any) => [...prevLabels, []]);
     setSelectedOperators((prevOperators: any) => [...prevOperators, []]);
     setInputValues((prevInputs: any) => [...prevInputs, []]);
+    setGroupOperators((prev: any) => {
+      const updated = [...prev];
+      updated[nextGroupIndex - 1] = 'AND';
+      return updated;
+    });
+    setAndGroupActive((prev: any) => {
+      const updated = [...prev];
+      updated[nextGroupIndex] = true;
+      return updated;
+    });
+    setOrGroupActive((prev: any) => {
+      const updated = [...prev];
+      updated[nextGroupIndex] = false;
+      return updated;
+    });
   };
 
   const generateRule = (groupIndex: number) => {
@@ -256,6 +291,20 @@ const NewGroup: FC<IQueryGroupProps> = ({
         i === groupIndex ? [...group, null] : group
       )
     );
+    if (!isAndActive[groupIndex] && !isOrActive[groupIndex] && !isExceptActive[groupIndex]) {
+      const updatedAndStates = [...isAndActive];
+      updatedAndStates[groupIndex] = true;
+      setAndActive(updatedAndStates);
+      const updatedOrStates = [...isOrActive];
+      updatedOrStates[groupIndex] = false;
+      setOrActive(updatedOrStates);
+      const updatedExceptStates = [...isExceptActive];
+      updatedExceptStates[groupIndex] = false;
+      setExceptActive(updatedExceptStates);
+      setAnd(true);
+      setOr(false);
+      setExcept(false);
+    }
   };
 
   return (
